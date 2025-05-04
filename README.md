@@ -24,8 +24,8 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/username/hand-gesture-recognition-mediapipe.git
-cd hand-gesture-recognition-mediapipe
+git clone https://github.com/SilverEdgee/CourseWork.git
+cd CourseWork
 
 # Установка зависимостей
 pip install -r requirements.txt
@@ -46,12 +46,10 @@ python app.py
 ```
 
 Возможные аргументы командной строки:
-- `--device` - номер камеры (по умолчанию: 0)
-- `--width` - ширина изображения (по умолчанию: 960)
-- `--height` - высота изображения (по умолчанию: 540)
-- `--use_static_image_mode` - использовать статический режим
-- `--min_detection_confidence` - минимальная уверенность обнаружения (по умолчанию: 0.7)
-- `--min_tracking_confidence` - минимальная уверенность отслеживания (по умолчанию: 0.5)
+- `--camera` - номер камеры (по умолчанию: 0)
+- `--width` - ширина изображения (по умолчанию: 640)
+- `--height` - высота изображения (по умолчанию: 480)
+- `--disable-pyautogui` - отключение функциональности pyautogui (для работы без X-сервера)
 
 ## Структура проекта
 
@@ -62,6 +60,8 @@ python app.py
 ├── gesture_processor.py        # Обработка и распознавание жестов
 ├── gesture_actions.py          # Выполнение действий по жестам
 ├── gesture_actions_config.json # Конфигурация привязок жестов
+├── project_structure.txt       # Подробное описание структуры проекта
+├── usage_guide.txt             # Руководство пользователя
 ├── model/                      # Модели машинного обучения
 │   ├── keypoint_classifier/    # Классификатор ключевых точек
 │   │   ├── keypoint.csv        # Данные для обучения
@@ -75,7 +75,7 @@ python app.py
 │       └── point_history_classifier.py # Код классификатора
 ├── utils/                     # Вспомогательные утилиты
 │   └── cvfpscalc.py          # Расчет FPS
-├── keypoint_classification.ipynb    # Ноутбук для обучения модели жестов
+├── keypoint_classification_EN.ipynb # Англзычная версия ноутбука
 └── point_history_classification.ipynb # Ноутбук для обучения модели движений
 ```
 
@@ -93,24 +93,18 @@ python app.py
 2. Нажимайте клавиши от 0 до 9 для записи соответствующих классов движений
 3. Откройте и выполните ноутбук `point_history_classification.ipynb`
 
+## Доступные жесты и их действия
+
+- Open (Открытая ладонь) - Tab - Подтверждение автодополнения кода
+- Close (Закрытая ладонь) - Ctrl+X - Вырезать выделенный текст
+- Pointer (Указывающий палец) - Home - Перемещение в начало строки
+- OK (Жест "ОК") - Shift+End - Выделение от курсора до конца строки
+- Thumb Up (Большой палец вверх) - Ctrl+S - Сохранить файл
+- Peace Sign (Знак мира/победы) - Ctrl+C - Копирование выделенного текста
+- Thumb Down (Большой палец вниз) - Ctrl+Z - Отменить последнее действие
+- Rock - F5 - Запуск отладки
+- Pistol - Ctrl+/ - Закомментировать/раскомментировать строку
+
 ## Настройка действий
 
 Вы можете настроить действия, которые будут выполняться при распознавании определенных жестов, редактируя файл `gesture_actions_config.json` или используя графический интерфейс.
-
-## Вклад в проект
-
-1. Форкните репозиторий
-2. Создайте ветку для вашей функциональности (`git checkout -b feature/amazing-feature`)
-3. Закоммитьте ваши изменения (`git commit -m 'Добавлена новая функциональность'`)
-4. Отправьте в ветку (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
-
-## Лицензия
-
-Распространяется под лицензией Apache 2.0. См. файл `LICENSE` для получения дополнительной информации.
-
-## Автор и благодарности
-
-* Оригинальный проект: [Kazuhito Takahashi](https://github.com/Kazuhito00)
-* Английская версия: [Nikita Kiselov](https://github.com/kinivi)
-* Русская адаптация: [Ваше имя](https://github.com/username)
