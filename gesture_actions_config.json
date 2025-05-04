@@ -1,0 +1,84 @@
+{
+    "Open": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "tab"
+            ]
+        }
+    },
+    "Close": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "ctrl",
+                "x"
+            ]
+        }
+    },
+    "Pointer": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "home"
+            ]
+        }
+    },
+    "OK": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "shift",
+                "end"
+            ]
+        }
+    },
+    "Thumb Up": {
+        "action": "save",
+        "params": {
+            "hotkey": [
+                "ctrl",
+                "s"
+            ]
+        }
+    },
+    "Peace Sign": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "ctrl",
+                "c"
+            ]
+        }
+    },
+    "Thumb Down": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "ctrl",
+                "z"
+            ]
+        }
+    },
+    "XUY": {
+        "action": "run_code",
+        "params": {
+            "hotkey": [
+                "f5"
+            ]
+        }
+    },
+    "Pistol": {
+        "action": "custom_hotkey",
+        "params": {
+            "hotkey": [
+                "ctrl",
+                "/"
+            ]
+        }
+    },
+    "Rock": {
+        "action": "paste",
+        "params": {}
+    }
+}
