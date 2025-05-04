@@ -60,14 +60,6 @@
             ]
         }
     },
-    "XUY": {
-        "action": "run_code",
-        "params": {
-            "hotkey": [
-                "f5"
-            ]
-        }
-    },
     "Pistol": {
         "action": "custom_hotkey",
         "params": {
@@ -78,7 +70,11 @@
         }
     },
     "Rock": {
-        "action": "paste",
-        "params": {}
+        "action": "run_code",
+        "params": {
+            "hotkey": [
+                "f5"
+            ]
+        }
     }
 }
