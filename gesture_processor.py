@@ -4,12 +4,10 @@ import copy
 import cv2
 import numpy as np
 import mediapipe as mp
-from collections import deque
 from collections import Counter
 
 # Импорт классификаторов
 from model import KeyPointClassifier
-from model import PointHistoryClassifier
 from utils import CvFpsCalc
 
 class GestureProcessor:
@@ -21,7 +19,7 @@ class GestureProcessor:
         self.min_detection_confidence = 0.7
         self.min_tracking_confidence = 0.5
         
-        # Инициализация MediaPipe Hands
+        # Инициализация MediaPipe рук
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=self.use_static_image_mode,
@@ -33,25 +31,15 @@ class GestureProcessor:
         
         # Инициализация классификаторов
         self.keypoint_classifier = KeyPointClassifier()
-        self.point_history_classifier = PointHistoryClassifier()
         
         # Загрузка меток классов
         self.keypoint_classifier_labels = self._load_classifier_labels(
             'model/keypoint_classifier/keypoint_classifier_label.csv')
-        self.point_history_classifier_labels = self._load_classifier_labels(
-            'model/point_history_classifier/point_history_classifier_label.csv')
-            
-        # История координат
-        self.history_length = 16
-        self.point_history = deque(maxlen=self.history_length)
-        
-        # История жестов пальцев
-        self.finger_gesture_history = deque(maxlen=self.history_length)
         
         # Режим работы
-        self.mode = 0  # 0: Нормальный режим, 1: Запись жестов, 2: Запись истории движений
+        self.mode = 0  # 0: Нормальный режим, 1: Запись жестов
         
-        # Номер текущего жеста/движения (для записи)
+        # Номер текущего жеста (для записи)
         self.number = -1
         
         # Калькулятор FPS
@@ -74,7 +62,7 @@ class GestureProcessor:
             restart_required = True
             
         if restart_required:
-            # Пересоздание объекта Hands с новыми настройками
+            #пересоздание объекта рук с новыми настройками
             self.hands = self.mp_hands.Hands(
                 static_image_mode=self.use_static_image_mode,
                 max_num_hands=1,
@@ -100,13 +88,13 @@ class GestureProcessor:
         Returns:
             tuple: (обработанное изображение, словарь с данными распознавания)
         """
-        # Копирование изображения для отрисовки
+        # копирование изображения для отрисовки
         debug_image = copy.deepcopy(image)
         
-        # Вычисление FPS
+        # вычисление FPS
         fps = self.cvFpsCalc.get()
         
-        # Конвертация изображения в RGB для MediaPipe
+        # конвертация изображения в RGB для MediaPipe
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # Запрет записи в изображение для увеличения производительности
@@ -136,78 +124,27 @@ class GestureProcessor:
                 
                 # Преобразование координат в относительные
                 pre_processed_landmark_list = self._pre_process_landmark(landmark_list)
-                pre_processed_point_history_list = self._pre_process_point_history(debug_image, self.point_history)
                 
                 # Запись данных в CSV, если мы в режиме записи
-                self._logging_csv(self.number, self.mode, pre_processed_landmark_list, pre_processed_point_history_list)
+                self._logging_csv(self.number, self.mode, pre_processed_landmark_list)
                 
                 # Распознавание жеста руки
                 hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
                 
-                # Если это указывающий жест, добавляем координаты указательного пальца в историю
-                if hand_sign_id == 2:  # Pointer
-                    self.point_history.append(landmark_list[8])  # Кончик указательного пальца
-                    
-                    # Сохраняем координаты кончика указательного пальца для возможного использования в действиях
-                    image_height, image_width = debug_image.shape[:2]
-                    result_data["index_finger_tip"] = (
-                        landmark_list[8][0] / image_width,  # x относительно ширины изображения
-                        landmark_list[8][1] / image_height  # y относительно высоты изображения
-                    )
-                else:
-                    self.point_history.append([0, 0])
-                    
-                # Распознавание жеста по истории движения
-                finger_gesture_id = 0
-                point_history_len = len(pre_processed_point_history_list)
-                if point_history_len == (self.history_length * 2):
-                    finger_gesture_id = self.point_history_classifier(pre_processed_point_history_list)
-                
-                # Добавление жеста в историю и нахождение наиболее частого
-                self.finger_gesture_history.append(finger_gesture_id)
-                most_common_fg_id = Counter(self.finger_gesture_history).most_common()
-                
                 # Сохранение результатов в словарь
                 result_data["hand_sign_id"] = hand_sign_id
                 result_data["hand_sign"] = self.keypoint_classifier_labels[hand_sign_id]
-                
-                # Безопасная обработка most_common_fg_id
-                if most_common_fg_id:
-                    fg_id = most_common_fg_id[0][0]
-                    result_data["finger_gesture_id"] = fg_id
-                    
-                    # Дополнительная проверка границ индекса
-                    if 0 <= fg_id < len(self.point_history_classifier_labels):
-                        result_data["finger_gesture"] = self.point_history_classifier_labels[fg_id]
-                        finger_gesture_text = self.point_history_classifier_labels[fg_id]
-                    else:
-                        result_data["finger_gesture"] = "Неизвестный жест"
-                        finger_gesture_text = "Неизвестный жест"
-                else:
-                    # Используем значение по умолчанию, если история пуста
-                    result_data["finger_gesture_id"] = 0
-                    result_data["finger_gesture"] = "Нет жеста" if len(self.point_history_classifier_labels) > 0 else ""
-                    finger_gesture_text = ""
-                
                 result_data["handedness"] = handedness.classification[0].label[0]  # 'R' или 'L'
                 
                 # Отрисовка результатов на изображении
                 debug_image = self._draw_bounding_rect(debug_image, brect)
                 debug_image = self._draw_landmarks(debug_image, landmark_list)
-                
                 debug_image = self._draw_info_text(
                     debug_image,
                     brect,
                     handedness.classification[0].label[0],
-                    self.keypoint_classifier_labels[hand_sign_id],
-                    finger_gesture_text,
+                    self.keypoint_classifier_labels[hand_sign_id]
                 )
-        else:
-            # Если руки не обнаружены, добавляем пустые координаты в историю
-            self.point_history.append([0, 0])
-            
-        # Отрисовка истории точек
-        debug_image = self._draw_point_history(debug_image, self.point_history)
         
         # Отрисовка информации (FPS, режим, номер)
         debug_image = self._draw_info(debug_image, fps, self.mode, self.number)
@@ -283,28 +220,7 @@ class GestureProcessor:
         
         return temp_landmark_list
         
-    def _pre_process_point_history(self, image, point_history):
-        """Предобработка истории координат для классификатора."""
-        image_width, image_height = image.shape[1], image.shape[0]
-        
-        temp_point_history = copy.deepcopy(point_history)
-        
-        # Преобразование в относительные координаты
-        base_x, base_y = 0, 0
-        for index, point in enumerate(temp_point_history):
-            if index == 0:
-                base_x, base_y = point[0], point[1]
-                
-            temp_point_history[index][0] = (temp_point_history[index][0] - base_x) / image_width
-            temp_point_history[index][1] = (temp_point_history[index][1] - base_y) / image_height
-            
-        # Преобразование в одномерный список
-        temp_point_history = list(
-            itertools.chain.from_iterable(temp_point_history))
-            
-        return temp_point_history
-        
-    def _logging_csv(self, number, mode, landmark_list, point_history_list):
+    def _logging_csv(self, number, mode, landmark_list):
         """Запись данных в CSV для обучения."""
         if mode == 0:  # Нормальный режим
             return
@@ -314,12 +230,6 @@ class GestureProcessor:
             with open(csv_path, 'a', newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([number, *landmark_list])
-                
-        if mode == 2 and (0 <= number <= 9):  # Режим записи данных для движений
-            csv_path = 'model/point_history_classifier/point_history.csv'
-            with open(csv_path, 'a', newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([number, *point_history_list])
                 
     def _draw_landmarks(self, image, landmark_points):
         """Отрисовка ключевых точек руки."""
@@ -364,7 +274,7 @@ class GestureProcessor:
         
         return image
         
-    def _draw_info_text(self, image, brect, handedness, hand_sign_text, finger_gesture_text):
+    def _draw_info_text(self, image, brect, handedness, hand_sign_text):
         """Отрисовка информации о распознанном жесте."""
         info_text = handedness
         if hand_sign_text != "":
@@ -374,21 +284,21 @@ class GestureProcessor:
                     
         return image
         
-    def _draw_point_history(self, image, point_history):
-        """Отрисовка истории движения точки (траектории)."""
-        for index, point in enumerate(point_history):
-            if point[0] != 0 and point[1] != 0:
-                cv2.circle(image, point, 1 + int(index / 2), (152, 251, 152), 2)
-                
-        return image
-        
     def _draw_info(self, image, fps, mode, number):
-                  
-        # Номер для записи
-        if 0 <= number <= 9:
-            cv2.putText(image, "NUM: " + str(number), (10, 110),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
-                      
+        """Отрисовка информации о FPS и режиме работы."""
+        cv2.putText(image, "FPS:" + str(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+                   1.0, (0, 0, 0), 4, cv2.LINE_AA)
+        cv2.putText(image, "FPS:" + str(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+                   1.0, (255, 255, 255), 2, cv2.LINE_AA)
+
+        if mode == 1:  # Режим записи жестов
+            cv2.putText(image, "MODE: Recording Key Point", (10, 90),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                       cv2.LINE_AA)
+            if 0 <= number <= 9:
+                cv2.putText(image, "NUM:" + str(number), (10, 110),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                           cv2.LINE_AA)
         return image
 
 # Для корректного импорта itertools

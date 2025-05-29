@@ -64,15 +64,14 @@ def main():
     
     # Проверка наличия необходимых моделей
     model_paths = [
-        'model/keypoint_classifier/keypoint_classifier.tflite',
-        'model/point_history_classifier/point_history_classifier.tflite'
+        'model/keypoint_classifier/keypoint_classifier.tflite'
     ]
     
     missing_files = [path for path in model_paths if not os.path.exists(path)]
     if missing_files:
         QMessageBox.critical(None, "Ошибка", 
                           f"Отсутствуют необходимые файлы моделей:\n{', '.join(missing_files)}\n\n"
-                          "Запустите сначала обучение моделей с помощью ноутбуков KeyPoint и PointHistory.")
+                          "Запустите сначала обучение моделей с помощью ноутбука KeyPoint.")
         return 1
     
     # Создание основного окна
@@ -103,10 +102,6 @@ def main():
             processor.set_mode(1)
             main_window.camera_selector.setCurrentIndex(1)
             main_window.log_event("Режим: Запись жестов")
-        elif key == 104:  # h - запись истории
-            processor.set_mode(2)
-            main_window.camera_selector.setCurrentIndex(2)
-            main_window.log_event("Режим: Запись истории")
     
     # Подключение обработчиков
     main_window.camera_selector.currentIndexChanged.connect(on_mode_change)
