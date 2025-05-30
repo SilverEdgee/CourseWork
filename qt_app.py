@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-import cv2
 import argparse
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
@@ -17,9 +16,6 @@ def check_requirements():
         import mediapipe
         import numpy as np
         import tensorflow as tf
-        
-        # Проверка pyautogui происходит в модуле gesture_actions
-        # и не должна блокировать запуск программы
         
         return True
     except ImportError as e:
@@ -47,22 +43,22 @@ def parse_args():
 
 def main():
     """Основная функция приложения."""
-    # Разбор аргументов командной строки
+    # разбор аргументов командной строки
     args = parse_args()
     
-    # Проверка требований
+    # проверка требований
     requirements_met = check_requirements()
     if requirements_met is not True:
         _, missing_lib = requirements_met
         print(f"Ошибка: отсутствует библиотека {missing_lib}")
         print("Установите необходимые зависимости с помощью команды:")
-        print("pip install mediapipe opencv-python tensorflow pyautogui pyqt5")
+        print("pip install -r requirements.txt")
         return 1
     
-    # Инициализация приложения
+    # инициализация приложения
     app = QApplication(sys.argv)
     
-    # Проверка наличия необходимых моделей
+    # проверка наличия необходимых моделей
     model_paths = [
         'model/keypoint_classifier/keypoint_classifier.tflite'
     ]
@@ -74,16 +70,16 @@ def main():
                           "Запустите сначала обучение моделей с помощью ноутбука KeyPoint.")
         return 1
     
-    # Создание основного окна
+    # создание основного окна
     main_window = MainWindow()
     
-    # Инициализация обработчика жестов
+    # инициализация обработчика жестов
     processor = GestureProcessor()
     
-    # Установка обработчика для видеопотока
+    # увтановка обработчика для видеопотока
     main_window.video_thread.set_processor(processor)
     
-    # Обработчик изменения режима
+    # обработчик изменения режима
     def on_mode_change(index):
         processor.set_mode(index)
         main_window.log_event(f"Режим изменен на: {index}")
@@ -103,22 +99,22 @@ def main():
             main_window.camera_selector.setCurrentIndex(1)
             main_window.log_event("Режим: Запись жестов")
     
-    # Подключение обработчиков
+    # подключение обработчиков
     main_window.camera_selector.currentIndexChanged.connect(on_mode_change)
     
-    # Установка параметров камеры из аргументов командной строки
+    # установка параметров камеры из аргументов командной строки
     main_window.camera_id = args.camera
     main_window.camera_width = args.width
     main_window.camera_height = args.height
     
-    # Если выбрана камера отличная от 0, выбираем её в интерфейсе
+    # если выбрана камера отличная от 0, выбираем её в интерфейсе
     if args.camera != 0 and args.camera < main_window.camera_selector.count():
         main_window.camera_selector.setCurrentIndex(args.camera)
     
-    # Показ окна
+    # показ окна
     main_window.show()
     
-    # Запуск основного цикла приложения
+    # запуск основного цикла приложения
     return app.exec_()
 
 

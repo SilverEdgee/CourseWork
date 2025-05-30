@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import json
 import os
 import logging
-import sys
 import time
 
 # Настройка логирования
@@ -79,8 +76,8 @@ class GestureActions:
             config_file (str): Путь к конфигурационному файлу
         """
         self.config_file = config_file
-        self.actions_mapping = {}
-        self.load_config()
+        self.actions_mapping = {} # словарь для хранения действий для жестов
+        self.load_config() # загрузка конфигурации из файла
         
         # Добавление контроля частоты выполнения действий
         self.action_cooldown = 1.0  # Задержка между действиями в секундах (по умолчанию 1 секунда)
@@ -94,7 +91,6 @@ class GestureActions:
                     self.actions_mapping = json.load(f)
                 logger.info(f"Конфигурация загружена из {self.config_file}")
             else:
-                # Дефолтная конфигурация
                 self.actions_mapping = {
                     "Open": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "o"]}},
                     "Close": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "w"]}},
@@ -103,8 +99,6 @@ class GestureActions:
                     "Thumb Up": {"action": "save", "params": {"hotkey": ["ctrl", "s"]}},
                     "Peace Sign": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "shift", "p"]}},
                     "Thumb Down": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "shift", "f"]}},
-                    "XUY": {"action": "run_code", "params": {"hotkey": ["f5"]}},
-                    "STRELYATEM PO XOXLAM": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "shift", "b"]}}
                 }
                 self.save_config()
         except Exception as e:
@@ -342,23 +336,9 @@ class GestureActions:
                 if not self._check_cooldown(action_type):
                     return False
                 
-                # Попробуем разные способы запуска кода, так как F5 может не работать в некоторых окружениях
                 try:
-                    # Метод 1: прямое нажатие клавиши F5
                     pyautogui.press('f5')
                     logger.info("Метод 1: Выполнен запуск кода (press F5)")
-                    
-                    # Метод 2: использование hotkey для F5
-                    pyautogui.hotkey('f5')
-                    logger.info("Метод 2: Выполнен запуск кода (hotkey F5)")
-                    
-                    # Метод 3: использование сочетания Shift+F10 (альтернативный способ запуска)
-                    pyautogui.hotkey('shift', 'f10')
-                    logger.info("Метод 3: Выполнен запуск кода (Shift+F10)")
-                    
-                    # Метод 4: использование Ctrl+F5 (запуск без отладки в некоторых средах)
-                    pyautogui.hotkey('ctrl', 'f5')
-                    logger.info("Метод 4: Выполнен запуск кода (Ctrl+F5)")
                 except Exception as e:
                     logger.error(f"Ошибка при запуске кода: {e}")
                 

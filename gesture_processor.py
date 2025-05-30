@@ -15,19 +15,19 @@ class GestureProcessor:
         """Инициализация обработчика распознавания жестов."""
         
         # Настройки MediaPipe
-        self.use_static_image_mode = False
-        self.min_detection_confidence = 0.7
-        self.min_tracking_confidence = 0.5
+        self.use_static_image_mode = False # False - видео, True - статика  
+        self.min_detection_confidence = 0.7 # минимальная вероятность обнаружения руки первично поменьше брать для темноты
+        self.min_tracking_confidence = 0.5 # минимальная вероятность отслеживания руки будет перебрасываться на отслеживание если меьнше 0.5
         
         # Инициализация MediaPipe рук
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=self.use_static_image_mode,
-            max_num_hands=1,
+            max_num_hands=1, # максимальное количество рук
             min_detection_confidence=self.min_detection_confidence,
             min_tracking_confidence=self.min_tracking_confidence,
         )
-        self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing = mp.solutions.drawing_utils # солюшен для рисования рук
         
         # Инициализация классификаторов
         self.keypoint_classifier = KeyPointClassifier()
@@ -125,7 +125,7 @@ class GestureProcessor:
                 # Преобразование координат в относительные
                 pre_processed_landmark_list = self._pre_process_landmark(landmark_list)
                 
-                # Запись данных в CSV, если мы в режиме записи
+                # Запись данных в CSV, если в режиме записи
                 self._logging_csv(self.number, self.mode, pre_processed_landmark_list)
                 
                 # Распознавание жеста руки
@@ -167,7 +167,7 @@ class GestureProcessor:
         
         landmark_array = np.empty((0, 2), int)
         
-        for _, landmark in enumerate(landmarks.landmark):
+        for landmark in landmarks.landmark:
             landmark_x = min(int(landmark.x * image_width), image_width - 1)
             landmark_y = min(int(landmark.y * image_height), image_height - 1)
             
@@ -185,7 +185,7 @@ class GestureProcessor:
         landmark_point = []
         
         # Перебор всех 21 точки руки
-        for _, landmark in enumerate(landmarks.landmark):
+        for landmark in landmarks.landmark:
             landmark_x = min(int(landmark.x * image_width), image_width - 1)
             landmark_y = min(int(landmark.y * image_height), image_height - 1)
             
@@ -206,7 +206,7 @@ class GestureProcessor:
             temp_landmark_list[index][0] = temp_landmark_list[index][0] - base_x
             temp_landmark_list[index][1] = temp_landmark_list[index][1] - base_y
             
-        # Преобразование в одномерный список
+        # Преобразование в одномерный список itertools
         temp_landmark_list = list(
             itertools.chain.from_iterable(temp_landmark_list))
             

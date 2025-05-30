@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import sys
 import os
 import cv2
@@ -7,100 +5,100 @@ import numpy as np
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                            QLabel, QPushButton, QComboBox, QGroupBox, QGridLayout, 
                            QTabWidget, QListWidget, QListWidgetItem, QTableWidget, 
-                           QTableWidgetItem, QCheckBox, QSlider, QMessageBox, QFileDialog,
-                           QSpinBox, QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView)
-from PyQt5.QtGui import QImage, QPixmap, QIcon, QColor, QFont, QPalette
+                           QTableWidgetItem, QCheckBox, QSlider, QMessageBox,
+                           QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView)
+from PyQt5.QtGui import QImage, QPixmap, QColor, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSize, QTime
 
 from gesture_actions import GestureActions
 
-# Определение цветовой схемы и стилей
+# определение цветовой схемы и стилей
 STYLE = """
 QMainWindow {
-    background-color: #2D2D30;
+    background-color: #2D2D30;  /* основной цвет фона окна */
 }
 QWidget {
-    background-color: #2D2D30;
-    color: #E6E6E6;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #2D2D30;  /* цвет фона всех элементов */
+    color: #E6E6E6;            /* цвет текста */
+    font-family: 'Segoe UI', Arial, sans-serif;  /* шрифты */
 }
 QGroupBox {
-    border: 1px solid #3F3F46;
-    border-radius: 5px;
-    margin-top: 10px;
-    font-weight: bold;
+    border: 1px solid #3F3F46;  /* рамка группы */
+    border-radius: 5px;         /* закругление углов */
+    margin-top: 10px;           /* отступ сверху */
+    font-weight: bold;          /* жирный текст */
 }
 QGroupBox::title {
-    subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 5px 0 5px;
+    subcontrol-origin: margin;  /* размещение заголовка */
+    left: 10px;                /* отступ слева */
+    padding: 0 5px 0 5px;      /* внутренние отступы */
 }
 QPushButton {
-    background-color: #007ACC;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 5px 15px;
-    font-weight: bold;
+    background-color: #007ACC;  /* цвет кнопки */
+    color: white;              /* цвет текста кнопки */
+    border: none;              /* убрать рамку */
+    border-radius: 3px;        /* закругление углов */
+    padding: 5px 15px;         /* отступы внутри */
+    font-weight: bold;         /* жирный текст */
 }
 QPushButton:hover {
-    background-color: #1C97EA;
+    background-color: #1C97EA;  /* цвет при наведении */
 }
 QPushButton:pressed {
-    background-color: #0062A3;
+    background-color: #0062A3;  /* цвет при нажатии */
 }
 QPushButton:disabled {
-    background-color: #4D4D4D;
-    color: #9D9D9D;
+    background-color: #4D4D4D;  /* цвет неактивной кнопки */
+    color: #9D9D9D;           /* цвет текста неактивной кнопки */
 }
 QComboBox {
-    border: 1px solid #3F3F46;
-    border-radius: 3px;
-    padding: 5px;
-    min-width: 6em;
+    border: 1px solid #3F3F46;  /* рамка выпадающего списка */
+    border-radius: 3px;         /* закругление углов */
+    padding: 5px;               /* отступы */
+    min-width: 6em;            /* минимальная ширина */
 }
 QComboBox:hover {
-    border: 1px solid #007ACC;
+    border: 1px solid #007ACC;  /* рамка при наведении */
 }
 QComboBox QAbstractItemView {
-    border: 1px solid #3F3F46;
-    selection-background-color: #007ACC;
+    border: 1px solid #3F3F46;  /* рамка выпадающего меню */
+    selection-background-color: #007ACC;  /* цвет выделения */
 }
 QSlider::groove:horizontal {
-    border: 1px solid #3F3F46;
-    height: 8px;
-    background: #252526;
-    margin: 2px 0;
-    border-radius: 4px;
+    border: 1px solid #3F3F46;  /* рамка полосы слайдера */
+    height: 8px;                /* высота полосы */
+    background: #252526;        /* цвет полосы */
+    margin: 2px 0;              /* отступы */
+    border-radius: 4px;         /* закругление */
 }
 QSlider::handle:horizontal {
-    background: #007ACC;
-    border: 1px solid #5F5F5F;
-    width: 18px;
-    margin: -2px 0;
-    border-radius: 4px;
+    background: #007ACC;        /* цвет ползунка */
+    border: 1px solid #5F5F5F;  /* рамка ползунка */
+    width: 18px;               /* ширина ползунка */
+    margin: -2px 0;            /* выравнивание */
+    border-radius: 4px;        /* закругление */
 }
 QSlider::handle:horizontal:hover {
-    background: #1C97EA;
+    background: #1C97EA;        /* цвет ползунка при наведении */
 }
 QCheckBox {
-    spacing: 5px;
+    spacing: 5px;              /* отступ между флажком и текстом */
 }
 QCheckBox::indicator {
-    width: 15px;
-    height: 15px;
+    width: 15px;               /* размер флажка */
+    height: 15px;              /* высота флажка */
 }
 QListWidget {
-    border: 1px solid #3F3F46;
-    border-radius: 3px;
+    border: 1px solid #3F3F46;  /* рамка списка */
+    border-radius: 3px;         /* закругление углов */
 }
 QListWidget::item:selected {
-    background-color: #007ACC;
+    background-color: #007ACC;  /* цвет выделенного элемента */
 }
 QSpinBox, QDoubleSpinBox {
-    border: 1px solid #3F3F46;
-    border-radius: 3px;
-    padding: 5px;
+    border: 1px solid #3F3F46;  /* рамка полей ввода чисел */
+    border-radius: 3px;         /* закругление углов */
+    padding: 5px;               /* отступы */
 }
 """
 
@@ -117,12 +115,12 @@ class VideoThread(QTimer):
         self.width = 640
         self.height = 480
         
-        # Настройки MediaPipe
+        # настройки MediaPipe
         self.use_static_image_mode = False
         self.min_detection_confidence = 0.7
         self.min_tracking_confidence = 0.5
         
-        # Обработчик жестов (будет установлен позже)
+        # обработчик жестов (будет установлен позже)
         self.processor = None
         
         # Запуск таймера
@@ -138,7 +136,7 @@ class VideoThread(QTimer):
         self.width = width
         self.height = height
         
-        # Инициализация камеры
+        # инициализация камеры
         self.cap = cv2.VideoCapture(self.camera_id)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
@@ -167,13 +165,13 @@ class VideoThread(QTimer):
         if not ret:
             return
             
-        # Отражение изображения по горизонтали (зеркально)
+        # отражение изображения по горизонтали (зеркально)
         frame = cv2.flip(frame, 1)
         
-        # Отправка оригинального кадра
+        # отправка оригинального кадра
         self.frame_ready.emit(frame)
         
-        # Если есть обработчик, обрабатываем кадр и отправляем результат
+        # если есть обработчик, обрабатываем кадр и отправляем результат
         if self.processor is not None:
             result_frame, result_data = self.processor.process_image(frame)
             self.processed_ready.emit(result_frame, result_data)
@@ -207,33 +205,33 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        # Параметры камеры
+        # параметры камеры
         self.camera_id = 0
         self.camera_width = 640
         self.camera_height = 480
         
-        # Применение стилей
+        # применение стилей
         self.apply_styles()
         
-        # Настройка окна
+        # настройка окна
         self.setWindowTitle("Hand Gesture Controller")
         self.setMinimumSize(1200, 800)
         
-        # Инициализация менеджера действий
+        # инициализация менеджера действий
         self.gesture_actions = GestureActions()
         
-        # Инициализация компонентов
+        # инициализация компонентов
         self.init_ui()
         
-        # Загрузка начальных значений настроек
+        # загрузка начальных значений настроек
         self.load_initial_settings()
         
-        # Инициализация видеопотока
+        # инициализация видеопотока
         self.video_thread = VideoThread(self)
         self.video_thread.frame_ready.connect(self.update_camera_feed)
         self.video_thread.processed_ready.connect(self.update_processed_feed)
         
-        # Загрузка списка жестов
+        # загрузка списка жестов
         self.load_gesture_list()
         
         # Загрузка конфигурации действий
@@ -300,14 +298,14 @@ class MainWindow(QMainWindow):
                 cap.release()
             except:
                 pass
-        camera_selector_layout.addWidget(self.camera_selector, 1)  # 1 = stretch factor
+        camera_selector_layout.addWidget(self.camera_selector, 1) 
         camera_layout.addLayout(camera_selector_layout)
         
         # Кнопка запуска/остановки камеры (большая)
         self.camera_button = QPushButton("ЗАПУСТИТЬ КАМЕРУ")
         self.camera_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.camera_button.setIconSize(QSize(24, 24))
-        self.camera_button.setMinimumHeight(40)  # Увеличиваем высоту кнопки
+        self.camera_button.setMinimumHeight(40) 
         self.camera_button.setStyleSheet("font-weight: bold;")
         self.camera_button.clicked.connect(self.toggle_camera)
         camera_layout.addWidget(self.camera_button)
@@ -777,7 +775,7 @@ class MainWindow(QMainWindow):
         """Добавление сообщения в лог событий"""
         item = QListWidgetItem(message)
         
-        # Определение типа сообщения по ключевым словам
+        # определение типа сообщения по ключевым словам
         if "ошибка" in message.lower() or "не удалось" in message.lower():
             item.setForeground(QColor(255, 99, 71))  # Красный для ошибок
         elif "жест распознан" in message.lower():
@@ -817,7 +815,6 @@ class MainWindow(QMainWindow):
                 
                 gestures_info.append((gesture_display, action_display))
         
-        # Создаем диалоговое окно с использованием QT вместо HTML
         dialog = QDialog(self)
         dialog.setWindowTitle("Справка по жестам IDE")
         dialog.setMinimumWidth(600)
