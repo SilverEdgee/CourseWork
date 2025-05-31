@@ -986,6 +986,20 @@ class MainWindow(QMainWindow):
                 self.video_thread.processor.set_number(number)
                 self.log_event(f"Выбран жест для записи: {number}")
                 
+    def keyPressEvent(self, event):
+        """Обработка нажатий клавиш"""
+        if event.key() == Qt.Key_K:  # k - запись текущего кадра
+            if self.video_thread.processor:
+                self.video_thread.processor.set_mode(1)  # Включаем режим записи
+                self.log_event("Запись кадра...")
+        elif 48 <= event.key() <= 57:  # 0-9
+            number = event.key() - 48
+            if self.video_thread.processor:
+                self.video_thread.processor.set_number(number)
+                self.log_event(f"Выбран жест для записи: {number}")
+        
+        super().keyPressEvent(event)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -235,6 +235,8 @@ class GestureProcessor:
                     writer = csv.writer(f)
                     writer.writerow([number, *landmark_list])
                 frame_recorded = True
+                # После записи кадра сразу переключаемся обратно в нормальный режим
+                self.mode = 0
             except Exception as e:
                 print(f"Ошибка при записи в CSV: {e}")
                 
