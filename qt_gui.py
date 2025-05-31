@@ -210,6 +210,9 @@ class MainWindow(QMainWindow):
         self.camera_width = 640
         self.camera_height = 480
         
+        # счетчик записанных кадров
+        self.recorded_frames = 0
+        
         # применение стилей
         self.apply_styles()
         
@@ -379,6 +382,42 @@ class MainWindow(QMainWindow):
         
         settings_layout.addWidget(recognition_group)
         
+        # ----- БЛОК ЗАПИСИ ДАННЫХ -----
+        recording_group = QGroupBox("Запись данных для обучения")
+        recording_layout = QVBoxLayout(recording_group)
+        recording_layout.setSpacing(12)
+        
+        # Режим записи
+        recording_mode_layout = QHBoxLayout()
+        recording_mode_layout.addWidget(QLabel("Режим:"))
+        self.recording_mode_selector = QComboBox()
+        self.recording_mode_selector.addItem("Нормальный режим", 0)
+        self.recording_mode_selector.addItem("Запись жестов", 1)
+        recording_mode_layout.addWidget(self.recording_mode_selector)
+        recording_layout.addLayout(recording_mode_layout)
+        
+        # Выбор номера жеста (0-9)
+        gesture_number_layout = QHBoxLayout()
+        gesture_number_layout.addWidget(QLabel("Номер жеста (0-9):"))
+        self.gesture_number_selector = QComboBox()
+        for i in range(10):  # 0-9
+            self.gesture_number_selector.addItem(f"Жест {i}", i)
+        self.gesture_number_selector.setCurrentIndex(-1)  # Нет выбранного жеста
+        gesture_number_layout.addWidget(self.gesture_number_selector)
+        recording_layout.addLayout(gesture_number_layout)
+        
+        # Статус записи
+        self.recording_status = QLabel("Статус: Нормальный режим")
+        self.recording_status.setStyleSheet("color: #8F8F8F;")
+        recording_layout.addWidget(self.recording_status)
+        
+        # Счетчик записанных кадров
+        self.frames_counter = QLabel("Записано кадров: 0")
+        self.frames_counter.setStyleSheet("color: #8F8F8F;")
+        recording_layout.addWidget(self.frames_counter)
+        
+        settings_layout.addWidget(recording_group)
+        
         # ----- БЛОК ДОСТУПНЫХ ЖЕСТОВ -----
         gesture_group = QGroupBox("Доступные жесты")
         gesture_layout = QVBoxLayout(gesture_group)
@@ -509,6 +548,8 @@ class MainWindow(QMainWindow):
         
         # Подключение сигналов
         self.action_gesture_selector.currentIndexChanged.connect(self.update_action_selector)
+        self.recording_mode_selector.currentIndexChanged.connect(self.on_recording_mode_change)
+        self.gesture_number_selector.currentIndexChanged.connect(self.on_gesture_number_change)
         
     def set_sensitivity(self, level):
         """Установка предустановленных уровней чувствительности"""
@@ -579,6 +620,13 @@ class MainWindow(QMainWindow):
         self.processed_feed.setPixmap(pixmap.scaled(
             self.processed_feed.width(), self.processed_feed.height(),
             Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            
+        # Проверяем, был ли записан кадр или возникла ошибка
+        if "frame_recorded" in data:
+            if "error" in data:
+                self.update_recording_status(error_message=data["error"])
+            else:
+                self.update_recording_status(frame_recorded=data["frame_recorded"])
             
         # Обновление информации о распознанном жесте и действии
         if "hand_sign" in data:
@@ -867,6 +915,81 @@ class MainWindow(QMainWindow):
         
         dialog.exec_()
 
+    def show_recording_notification(self, success=True, error_message=None):
+        """Показать уведомление о записи данных"""
+        msg = QMessageBox(self)
+        
+        if success:
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Запись данных")
+            msg.setText(f"Успешно записано {self.recorded_frames} кадров")
+        else:
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Ошибка записи")
+            msg.setText(f"Ошибка при записи данных: {error_message}")
+            
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+        
+    def update_recording_status(self, frame_recorded=False, error_message=None):
+        """Обновление статуса записи и счетчика кадров"""
+        if error_message:
+            self.show_recording_notification(success=False, error_message=error_message)
+            return
+            
+        if frame_recorded:
+            self.recorded_frames += 1
+            self.frames_counter.setText(f"Записано кадров: {self.recorded_frames}")
+            
+            # Показываем уведомление каждые 50 кадров
+            if self.recorded_frames % 50 == 0:
+                self.show_recording_notification(success=True)
+                
+    def on_recording_mode_change(self, index):
+        """Обработчик изменения режима записи"""
+        mode = self.recording_mode_selector.currentData()
+        
+        if mode == 1:  # Режим записи
+            self.recording_status.setText("Статус: Режим записи жестов")
+            self.recording_status.setStyleSheet("color: #FF6B6B;")  # Красный цвет для записи
+            self.gesture_number_selector.setEnabled(True)
+            self.recorded_frames = 0
+            self.frames_counter.setText("Записано кадров: 0")
+            
+            # Показываем инструкцию по записи
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Режим записи")
+            msg.setText("Инструкция по записи данных:\n\n"
+                       "1. Выберите номер жеста (0-9)\n"
+                       "2. Покажите жест перед камерой\n"
+                       "3. Данные будут записываться автоматически\n"
+                       "4. Каждые 50 кадров будет показано уведомление\n"
+                       "5. Для завершения записи переключите режим на 'Нормальный'")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:  # Нормальный режим
+            if self.recorded_frames > 0:
+                self.show_recording_notification(success=True)
+                
+            self.recording_status.setText("Статус: Нормальный режим")
+            self.recording_status.setStyleSheet("color: #8F8F8F;")
+            self.gesture_number_selector.setEnabled(False)
+            self.gesture_number_selector.setCurrentIndex(-1)
+            
+        # Обновляем режим в процессоре жестов
+        if self.video_thread.processor:
+            self.video_thread.processor.set_mode(mode)
+            self.log_event(f"Режим изменен на: {'Запись жестов' if mode == 1 else 'Нормальный режим'}")
+
+    def on_gesture_number_change(self, index):
+        """Обработчик изменения номера жеста для записи"""
+        if index >= 0:
+            number = self.gesture_number_selector.currentData()
+            if self.video_thread.processor:
+                self.video_thread.processor.set_number(number)
+                self.log_event(f"Выбран жест для записи: {number}")
+                
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -110,7 +110,8 @@ class GestureProcessor:
         result_data = {
             "fps": fps,
             "mode": self.mode,
-            "number": self.number
+            "number": self.number,
+            "frame_recorded": False
         }
         
         # Если обнаружены руки
@@ -126,7 +127,8 @@ class GestureProcessor:
                 pre_processed_landmark_list = self._pre_process_landmark(landmark_list)
                 
                 # Запись данных в CSV, если в режиме записи
-                self._logging_csv(self.number, self.mode, pre_processed_landmark_list)
+                frame_recorded = self._logging_csv(self.number, self.mode, pre_processed_landmark_list)
+                result_data["frame_recorded"] = frame_recorded
                 
                 # Распознавание жеста руки
                 hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
@@ -222,15 +224,22 @@ class GestureProcessor:
         
     def _logging_csv(self, number, mode, landmark_list):
         """Запись данных в CSV для обучения."""
+        frame_recorded = False
         if mode == 0:  # Нормальный режим
-            return
+            return frame_recorded
             
         if mode == 1 and (0 <= number <= 9):  # Режим записи данных для жестов
-            csv_path = 'model/keypoint_classifier/keypoint.csv'
-            with open(csv_path, 'a', newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([number, *landmark_list])
+            try:
+                csv_path = 'model/keypoint_classifier/keypoint.csv'
+                with open(csv_path, 'a', newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([number, *landmark_list])
+                frame_recorded = True
+            except Exception as e:
+                print(f"Ошибка при записи в CSV: {e}")
                 
+        return frame_recorded
+        
     def _draw_landmarks(self, image, landmark_points):
         """Отрисовка ключевых точек руки."""
         # Соединения между точками
