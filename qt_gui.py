@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                            QLabel, QPushButton, QComboBox, QGroupBox, QGridLayout, 
                            QTabWidget, QListWidget, QListWidgetItem, QTableWidget, 
                            QTableWidgetItem, QCheckBox, QSlider, QMessageBox,
-                           QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView)
+                           QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView,
+                           QProgressBar)
 from PyQt5.QtGui import QImage, QPixmap, QColor, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSize, QTime
 
@@ -27,6 +28,8 @@ QGroupBox {
     border-radius: 5px;         /* закругление углов */
     margin-top: 10px;           /* отступ сверху */
     font-weight: bold;          /* жирный текст */
+    padding: 10px;              /* внутренние отступы */
+    min-width: 320px;           /* минимальная ширина групп */
 }
 QGroupBox::title {
     subcontrol-origin: margin;  /* размещение заголовка */
@@ -280,16 +283,19 @@ class MainWindow(QMainWindow):
         settings_layout = QVBoxLayout(settings_panel)
         settings_layout.setContentsMargins(0, 0, 0, 0)
         settings_layout.setSpacing(15)
-        settings_panel.setFixedWidth(300)  # Фиксированная ширина левой панели
+        settings_panel.setFixedWidth(400)  # Увеличенная ширина левой панели
         
         # ----- БЛОК КАМЕРЫ И УПРАВЛЕНИЯ -----
         camera_group = QGroupBox("Камера и управление")
         camera_layout = QVBoxLayout(camera_group)
         camera_layout.setSpacing(12)
         
-        # Выбор камеры (горизонтальный layout)
+        # Выбор камеры (горизонтальный layout с увеличенным расстоянием)
         camera_selector_layout = QHBoxLayout()
-        camera_selector_layout.addWidget(QLabel("Камера:"))
+        camera_selector_layout.setSpacing(10)
+        camera_label = QLabel("Камера:")
+        camera_label.setMinimumWidth(60)
+        camera_selector_layout.addWidget(camera_label)
         self.camera_selector = QComboBox()
         self.camera_selector.addItem("Камера по умолчанию", 0)
         # Добавим поиск дополнительных камер
@@ -308,7 +314,7 @@ class MainWindow(QMainWindow):
         self.camera_button = QPushButton("ЗАПУСТИТЬ КАМЕРУ")
         self.camera_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.camera_button.setIconSize(QSize(24, 24))
-        self.camera_button.setMinimumHeight(40) 
+        self.camera_button.setMinimumHeight(50) 
         self.camera_button.setStyleSheet("font-weight: bold;")
         self.camera_button.clicked.connect(self.toggle_camera)
         camera_layout.addWidget(self.camera_button)
@@ -317,7 +323,7 @@ class MainWindow(QMainWindow):
         self.show_gestures_info_button = QPushButton("СПРАВКА ПО ЖЕСТАМ")
         self.show_gestures_info_button.setIcon(self.style().standardIcon(QStyle.SP_MessageBoxInformation))
         self.show_gestures_info_button.setIconSize(QSize(24, 24))
-        self.show_gestures_info_button.setMinimumHeight(40)  # Увеличиваем высоту кнопки
+        self.show_gestures_info_button.setMinimumHeight(50)
         self.show_gestures_info_button.clicked.connect(self.show_gestures_info)
         camera_layout.addWidget(self.show_gestures_info_button)
         
@@ -325,37 +331,38 @@ class MainWindow(QMainWindow):
         
         # ----- БЛОК НАСТРОЕК РАСПОЗНАВАНИЯ -----
         recognition_group = QGroupBox("Настройки распознавания")
-        recognition_layout = QVBoxLayout(recognition_group)
+        recognition_layout = QGridLayout(recognition_group)
         recognition_layout.setSpacing(12)
         
         # Точность распознавания (с пояснением)
         sensitivity_label = QLabel("Точность распознавания:")
         sensitivity_label.setStyleSheet("font-weight: bold; margin-top: 5px;")
-        recognition_layout.addWidget(sensitivity_label)
+        recognition_layout.addWidget(sensitivity_label, 0, 0, 1, 3)
         
         # Пояснение что это такое
         sensitivity_explanation = QLabel("Выберите насколько точно будут распознаваться жесты")
         sensitivity_explanation.setStyleSheet("color: #8F8F8F; font-size: 10px; margin-bottom: 5px;")
-        recognition_layout.addWidget(sensitivity_explanation)
+        recognition_layout.addWidget(sensitivity_explanation, 1, 0, 1, 3)
         
-        sensitivity_buttons = QHBoxLayout()
+        # Кнопки чувствительности в одну строку с равным распределением
         self.sensitivity_low = QPushButton("Низкая")
+        self.sensitivity_low.setMinimumHeight(40)
         self.sensitivity_low.setToolTip("Жесты распознаются легко, но возможны ложные срабатывания")
         self.sensitivity_low.clicked.connect(lambda: self.set_sensitivity("low"))
-        sensitivity_buttons.addWidget(self.sensitivity_low)
+        recognition_layout.addWidget(self.sensitivity_low, 2, 0)
         
         self.sensitivity_medium = QPushButton("Средняя")
+        self.sensitivity_medium.setMinimumHeight(40)
         self.sensitivity_medium.setToolTip("Сбалансированное распознавание (рекомендуется)")
         self.sensitivity_medium.clicked.connect(lambda: self.set_sensitivity("medium"))
-        self.sensitivity_medium.setStyleSheet("background-color: #007ACC;")  # Выбрана по умолчанию
-        sensitivity_buttons.addWidget(self.sensitivity_medium)
+        self.sensitivity_medium.setStyleSheet("background-color: #007ACC;")
+        recognition_layout.addWidget(self.sensitivity_medium, 2, 1)
         
         self.sensitivity_high = QPushButton("Высокая")
+        self.sensitivity_high.setMinimumHeight(40)
         self.sensitivity_high.setToolTip("Жесты должны быть выполнены точно, меньше ложных срабатываний")
         self.sensitivity_high.clicked.connect(lambda: self.set_sensitivity("high"))
-        sensitivity_buttons.addWidget(self.sensitivity_high)
-        
-        recognition_layout.addLayout(sensitivity_buttons)
+        recognition_layout.addWidget(self.sensitivity_high, 2, 2)
         
         # Задержка между действиями (регулируемая)
         cooldown_layout = QHBoxLayout()
@@ -364,21 +371,21 @@ class MainWindow(QMainWindow):
         cooldown_layout.addWidget(cooldown_label)
         
         self.action_cooldown_spinner = QDoubleSpinBox()
+        self.action_cooldown_spinner.setMinimumHeight(30)
         self.action_cooldown_spinner.setRange(0.1, 5.0)
         self.action_cooldown_spinner.setSingleStep(0.1)
-        self.action_cooldown_spinner.setValue(1.0)  # 1 секунда по умолчанию
+        self.action_cooldown_spinner.setValue(1.0)
         self.action_cooldown_spinner.valueChanged.connect(self.update_action_cooldown)
         cooldown_layout.addWidget(self.action_cooldown_spinner)
-        
-        recognition_layout.addLayout(cooldown_layout)
+        recognition_layout.addLayout(cooldown_layout, 3, 0, 1, 3)
         
         # Кнопка применения настроек
         self.apply_settings_button = QPushButton("ПРИМЕНИТЬ НАСТРОЙКИ")
         self.apply_settings_button.setIcon(self.style().standardIcon(QStyle.SP_DialogApplyButton))
         self.apply_settings_button.setIconSize(QSize(24, 24))
-        self.apply_settings_button.setMinimumHeight(40)
+        self.apply_settings_button.setMinimumHeight(50)
         self.apply_settings_button.clicked.connect(self.apply_mediapipe_settings)
-        recognition_layout.addWidget(self.apply_settings_button)
+        recognition_layout.addWidget(self.apply_settings_button, 4, 0, 1, 3)
         
         settings_layout.addWidget(recognition_group)
         
@@ -391,6 +398,7 @@ class MainWindow(QMainWindow):
         recording_mode_layout = QHBoxLayout()
         recording_mode_layout.addWidget(QLabel("Режим:"))
         self.recording_mode_selector = QComboBox()
+        self.recording_mode_selector.setMinimumHeight(30)
         self.recording_mode_selector.addItem("Нормальный режим", 0)
         self.recording_mode_selector.addItem("Запись жестов", 1)
         recording_mode_layout.addWidget(self.recording_mode_selector)
@@ -400,21 +408,40 @@ class MainWindow(QMainWindow):
         gesture_number_layout = QHBoxLayout()
         gesture_number_layout.addWidget(QLabel("Номер жеста (0-9):"))
         self.gesture_number_selector = QComboBox()
-        for i in range(10):  # 0-9
+        self.gesture_number_selector.setMinimumHeight(30)
+        for i in range(10):
             self.gesture_number_selector.addItem(f"Жест {i}", i)
-        self.gesture_number_selector.setCurrentIndex(-1)  # Нет выбранного жеста
+        self.gesture_number_selector.setCurrentIndex(-1)
         gesture_number_layout.addWidget(self.gesture_number_selector)
         recording_layout.addLayout(gesture_number_layout)
         
-        # Статус записи
+        # Кнопка записи и прогресс
+        self.record_button = QPushButton("НАЧАТЬ ЗАПИСЬ (3 СЕК)")
+        self.record_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
+        self.record_button.setMinimumHeight(50)
+        self.record_button.setEnabled(False)
+        self.record_button.clicked.connect(self.toggle_recording)
+        recording_layout.addWidget(self.record_button)
+        
+        # Прогресс-бар записи
+        self.record_progress = QProgressBar()
+        self.record_progress.setRange(0, 100)
+        self.record_progress.setValue(0)
+        self.record_progress.setTextVisible(True)
+        self.record_progress.setFormat("Готов к записи")
+        self.record_progress.setMinimumHeight(25)
+        recording_layout.addWidget(self.record_progress)
+        
+        # Статус записи и счетчик кадров
+        status_layout = QVBoxLayout()
         self.recording_status = QLabel("Статус: Нормальный режим")
         self.recording_status.setStyleSheet("color: #8F8F8F;")
-        recording_layout.addWidget(self.recording_status)
+        status_layout.addWidget(self.recording_status)
         
-        # Счетчик записанных кадров
         self.frames_counter = QLabel("Записано кадров: 0")
         self.frames_counter.setStyleSheet("color: #8F8F8F;")
-        recording_layout.addWidget(self.frames_counter)
+        status_layout.addWidget(self.frames_counter)
+        recording_layout.addLayout(status_layout)
         
         settings_layout.addWidget(recording_group)
         
@@ -429,28 +456,30 @@ class MainWindow(QMainWindow):
         
         settings_layout.addWidget(gesture_group)
         
-        # ----- БЛОК НАСТРОЙКИ ЖЕСТА (УПРОЩЕННЫЙ) -----
+        # ----- БЛОК НАСТРОЙКИ ЖЕСТА -----
         action_group = QGroupBox("Настройка действия")
         action_layout = QGridLayout(action_group)
         action_layout.setSpacing(10)
         
-        # Выбор жеста и действия (в одну строку)
+        # Выбор жеста и действия
         action_layout.addWidget(QLabel("Жест:"), 0, 0)
         self.action_gesture_selector = QComboBox()
+        self.action_gesture_selector.setMinimumHeight(30)
         action_layout.addWidget(self.action_gesture_selector, 0, 1)
         
         action_layout.addWidget(QLabel("Действие:"), 1, 0)
         self.action_type_selector = QComboBox()
+        self.action_type_selector.setMinimumHeight(30)
         action_layout.addWidget(self.action_type_selector, 1, 1)
         
         # Загрузка доступных действий
         for action in self.gesture_actions.get_available_actions():
             self.action_type_selector.addItem(action["name"], action["id"])
         
-        # Кнопка сохранения настроек действия (во всю ширину)
+        # Кнопка сохранения настроек действия
         self.save_action_button = QPushButton("СОХРАНИТЬ ДЕЙСТВИЕ")
         self.save_action_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
-        self.save_action_button.setMinimumHeight(40)
+        self.save_action_button.setMinimumHeight(50)
         self.save_action_button.clicked.connect(self.save_action_mapping)
         action_layout.addWidget(self.save_action_button, 2, 0, 1, 2)
         
@@ -465,71 +494,52 @@ class MainWindow(QMainWindow):
         video_layout.setContentsMargins(0, 0, 0, 0)
         video_layout.setSpacing(15)
         
-        # ----- ВИДЕО ПОТОКИ (УМЕНЬШЕННЫЕ) -----
-        video_feeds = QWidget()
-        video_feeds_layout = QHBoxLayout(video_feeds)
-        video_feeds_layout.setSpacing(15)
-        
-        # Оригинальный видеопоток (уменьшенный)
-        original_group = QGroupBox("Оригинальное изображение")
-        original_layout = QVBoxLayout(original_group)
-        self.original_feed = QLabel()
-        self.original_feed.setAlignment(Qt.AlignCenter)
-        self.original_feed.setMinimumSize(320, 240)  # Уменьшенный размер видео
-        self.original_feed.setStyleSheet("background-color: #1E1E1E; border-radius: 5px; padding: 5px;")
-        original_layout.addWidget(self.original_feed)
-        video_feeds_layout.addWidget(original_group)
-        
-        # Обработанный видеопоток (уменьшенный)
+        # ----- ВИДЕО ПОТОК -----
         processed_group = QGroupBox("Распознавание жестов")
         processed_layout = QVBoxLayout(processed_group)
         self.processed_feed = QLabel()
         self.processed_feed.setAlignment(Qt.AlignCenter)
-        self.processed_feed.setMinimumSize(320, 240)  # Уменьшенный размер видео
+        self.processed_feed.setMinimumSize(640, 480)
         self.processed_feed.setStyleSheet("background-color: #1E1E1E; border-radius: 5px; padding: 5px;")
         processed_layout.addWidget(self.processed_feed)
-        video_feeds_layout.addWidget(processed_group)
+        video_layout.addWidget(processed_group)
         
-        video_layout.addWidget(video_feeds, 1)  # 1 = stretch factor (растягивается)
-        
-        # ----- ИНФОРМАЦИОННЫЙ БЛОК (УМЕНЬШЕННЫЙ) -----
+        # ----- ИНФОРМАЦИОННЫЙ БЛОК -----
         info_panel = QWidget()
         info_layout = QHBoxLayout(info_panel)
         info_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Текущий жест (крупный шрифт, слева)
+        # Текущий жест (крупный шрифт)
         current_gesture_group = QGroupBox("Текущий жест")
-        current_gesture_group.setMinimumWidth(200)  # Устанавливаем минимальную ширину
         current_gesture_layout = QVBoxLayout(current_gesture_group)
         self.current_gesture_label = QLabel("Нет")
-        self.current_gesture_label.setFont(QFont("Arial", 20, QFont.Bold))
+        self.current_gesture_label.setFont(QFont("Arial", 24, QFont.Bold))
         self.current_gesture_label.setStyleSheet("color: #3C9EFF;")
         self.current_gesture_label.setAlignment(Qt.AlignCenter)
         current_gesture_layout.addWidget(self.current_gesture_label)
         info_layout.addWidget(current_gesture_group)
         
-        # Текущее действие (средний, по центру)
+        # Текущее действие
         current_action_group = QGroupBox("Текущее действие")
-        current_action_group.setMinimumWidth(300)  # Устанавливаем минимальную ширину
         current_action_layout = QVBoxLayout(current_action_group)
         self.current_action_label = QLabel("Нет")
-        self.current_action_label.setFont(QFont("Arial", 16))
+        self.current_action_label.setFont(QFont("Arial", 20))
         self.current_action_label.setStyleSheet("color: #3C9EFF;")
         self.current_action_label.setAlignment(Qt.AlignCenter)
         current_action_layout.addWidget(self.current_action_label)
         info_layout.addWidget(current_action_group)
         
-        # Лог (маленький, справа)
+        # Лог событий
         log_group = QGroupBox("Лог событий")
         log_layout = QVBoxLayout(log_group)
         self.event_log = QListWidget()
-        self.event_log.setMaximumHeight(100)  # Ограничиваем высоту лога
+        self.event_log.setMaximumHeight(150)
         log_layout.addWidget(self.event_log)
         info_layout.addWidget(log_group)
         
         video_layout.addWidget(info_panel)
         
-        # ----- КНОПКИ УПРАВЛЕНИЯ (ВНИЗУ) -----
+        # ----- КНОПКИ УПРАВЛЕНИЯ -----
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
         
@@ -537,14 +547,14 @@ class MainWindow(QMainWindow):
         self.recognition_button = QPushButton("ЗАПУСТИТЬ РАСПОЗНАВАНИЕ")
         self.recognition_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.recognition_button.setIconSize(QSize(24, 24))
-        self.recognition_button.setMinimumHeight(40)
-        self.recognition_button.setEnabled(False)  # Отключено до запуска камеры
+        self.recognition_button.setMinimumHeight(50)
+        self.recognition_button.setEnabled(False)
         buttons_layout.addWidget(self.recognition_button)
         
         video_layout.addLayout(buttons_layout)
         
         # Добавляем правую панель в основной layout
-        main_layout.addWidget(video_panel, 3)  # 3 = растягивание в 3 раза больше чем левая панель
+        main_layout.addWidget(video_panel, 2)
         
         # Подключение сигналов
         self.action_gesture_selector.currentIndexChanged.connect(self.update_action_selector)
@@ -593,7 +603,6 @@ class MainWindow(QMainWindow):
             self.camera_button.setText("ЗАПУСТИТЬ КАМЕРУ")
             self.camera_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
             self.recognition_button.setEnabled(False)
-            self.original_feed.clear()
             self.processed_feed.clear()
             self.log_event("Камера остановлена")
             
@@ -605,8 +614,8 @@ class MainWindow(QMainWindow):
         pixmap = QPixmap.fromImage(qt_image)
         
         # Добавляем границу к изображению
-        self.original_feed.setPixmap(pixmap.scaled(
-            self.original_feed.width(), self.original_feed.height(),
+        self.processed_feed.setPixmap(pixmap.scaled(
+            self.processed_feed.width(), self.processed_feed.height(),
             Qt.KeepAspectRatio, Qt.SmoothTransformation))
             
     def update_processed_feed(self, frame, data):
@@ -922,7 +931,7 @@ class MainWindow(QMainWindow):
         if success:
             msg.setIcon(QMessageBox.Information)
             msg.setWindowTitle("Запись данных")
-            msg.setText(f"Успешно записано {self.recorded_frames} кадров")
+            msg.setText(f"Успешно записано {self.recorded_frames} кадров для жеста {self.gesture_number_selector.currentText()}")
         else:
             msg.setIcon(QMessageBox.Warning)
             msg.setWindowTitle("Ошибка записи")
@@ -937,14 +946,10 @@ class MainWindow(QMainWindow):
             self.show_recording_notification(success=False, error_message=error_message)
             return
             
-        if frame_recorded:
+        if frame_recorded and self.is_recording:
             self.recorded_frames += 1
             self.frames_counter.setText(f"Записано кадров: {self.recorded_frames}")
             
-            # Показываем уведомление каждые 50 кадров
-            if self.recorded_frames % 50 == 0:
-                self.show_recording_notification(success=True)
-                
     def on_recording_mode_change(self, index):
         """Обработчик изменения режима записи"""
         mode = self.recording_mode_selector.currentData()
@@ -953,6 +958,7 @@ class MainWindow(QMainWindow):
             self.recording_status.setText("Статус: Режим записи жестов")
             self.recording_status.setStyleSheet("color: #FF6B6B;")  # Красный цвет для записи
             self.gesture_number_selector.setEnabled(True)
+            self.record_button.setEnabled(True)
             self.recorded_frames = 0
             self.frames_counter.setText("Записано кадров: 0")
             
@@ -962,26 +968,29 @@ class MainWindow(QMainWindow):
             msg.setWindowTitle("Режим записи")
             msg.setText("Инструкция по записи данных:\n\n"
                        "1. Выберите номер жеста (0-9)\n"
-                       "2. Покажите жест перед камерой\n"
-                       "3. Данные будут записываться автоматически\n"
-                       "4. Каждые 50 кадров будет показано уведомление\n"
-                       "5. Для завершения записи переключите режим на 'Нормальный'")
+                       "2. Нажмите кнопку 'НАЧАТЬ ЗАПИСЬ'\n"
+                       "3. Покажите и удерживайте жест 3 секунды\n"
+                       "4. Запись остановится автоматически\n"
+                       "5. Повторите для других вариаций жеста")
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
         else:  # Нормальный режим
-            if self.recorded_frames > 0:
-                self.show_recording_notification(success=True)
+            if self.is_recording:
+                self.toggle_recording()  # Останавливаем запись если она идет
                 
             self.recording_status.setText("Статус: Нормальный режим")
             self.recording_status.setStyleSheet("color: #8F8F8F;")
             self.gesture_number_selector.setEnabled(False)
+            self.record_button.setEnabled(False)
             self.gesture_number_selector.setCurrentIndex(-1)
+            self.record_progress.setValue(0)
+            self.record_progress.setFormat("Готов к записи")
             
         # Обновляем режим в процессоре жестов
         if self.video_thread.processor:
             self.video_thread.processor.set_mode(mode)
             self.log_event(f"Режим изменен на: {'Запись жестов' if mode == 1 else 'Нормальный режим'}")
-
+            
     def on_gesture_number_change(self, index):
         """Обработчик изменения номера жеста для записи"""
         if index >= 0:
@@ -989,6 +998,36 @@ class MainWindow(QMainWindow):
             if self.video_thread.processor:
                 self.video_thread.processor.set_number(number)
                 self.log_event(f"Выбран жест для записи: {number}")
+                
+    def toggle_recording(self):
+        """Переключение состояния записи данных"""
+        if not self.is_recording:
+            self.is_recording = True
+            self.recording_start_time = QTime.currentTime().msecsSinceStartOfDay()
+            self.record_button.setText("ОСТАНОВИТЬ ЗАПИСЬ")
+            self.record_button.setIcon(self.style().standardIcon(QStyle.SP_DialogCancelButton))  # Иконка для остановки
+            self.log_event("Запись данных начата")
+        else:
+            self.is_recording = False
+            self.record_button.setText("НАЧАТЬ ЗАПИСЬ (3 СЕК)")
+            self.record_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))  # Возвращаем иконку записи
+            self.log_event("Запись данных остановлена")
+
+    def update_recording_progress(self):
+        """Обновление прогресса записи данных"""
+        if self.is_recording:
+            current_time = QTime.currentTime().msecsSinceStartOfDay()
+            elapsed_time = current_time - self.recording_start_time
+            progress = min(100, int(elapsed_time / self.RECORD_DURATION * 100))
+            
+            # Обновляем прогресс-бар
+            self.record_progress.setValue(progress)
+            self.record_progress.setFormat(f"Запись: {progress}%")
+            
+            # Если время записи истекло
+            if elapsed_time >= self.RECORD_DURATION:
+                self.toggle_recording()  # Останавливаем запись
+                self.show_recording_notification(success=True)
                 
 
 if __name__ == "__main__":
