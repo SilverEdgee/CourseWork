@@ -110,8 +110,7 @@ class GestureProcessor:
         result_data = {
             "fps": fps,
             "mode": self.mode,
-            "number": self.number,
-            "frame_recorded": False
+            "number": self.number
         }
         
         # Если обнаружены руки
@@ -126,10 +125,6 @@ class GestureProcessor:
                 # Преобразование координат в относительные
                 pre_processed_landmark_list = self._pre_process_landmark(landmark_list)
                 
-                # Запись данных в CSV, если в режиме записи
-                frame_recorded = self._logging_csv(self.number, self.mode, pre_processed_landmark_list)
-                result_data["frame_recorded"] = frame_recorded
-                
                 # Распознавание жеста руки
                 hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
                 
@@ -137,6 +132,7 @@ class GestureProcessor:
                 result_data["hand_sign_id"] = hand_sign_id
                 result_data["hand_sign"] = self.keypoint_classifier_labels[hand_sign_id]
                 result_data["handedness"] = handedness.classification[0].label[0]  # 'R' или 'L'
+                result_data["landmark_list"] = pre_processed_landmark_list  # Сохраняем точки для записи
                 
                 # Отрисовка результатов на изображении
                 debug_image = self._draw_bounding_rect(debug_image, brect)
@@ -222,26 +218,6 @@ class GestureProcessor:
         
         return temp_landmark_list
         
-    def _logging_csv(self, number, mode, landmark_list):
-        """Запись данных в CSV для обучения."""
-        frame_recorded = False
-        if mode == 0:  # Нормальный режим
-            return frame_recorded
-            
-        if mode == 1 and (0 <= number <= 9):  # Режим записи данных для жестов
-            try:
-                csv_path = 'model/keypoint_classifier/keypoint.csv'
-                with open(csv_path, 'a', newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([number, *landmark_list])
-                frame_recorded = True
-                # После записи кадра сразу переключаемся обратно в нормальный режим
-                self.mode = 0
-            except Exception as e:
-                print(f"Ошибка при записи в CSV: {e}")
-                
-        return frame_recorded
-        
     def _draw_landmarks(self, image, landmark_points):
         """Отрисовка ключевых точек руки."""
         # Соединения между точками
@@ -311,6 +287,31 @@ class GestureProcessor:
                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                            cv2.LINE_AA)
         return image
+
+    def record_frame(self, landmark_list):
+        """Запись кадра в CSV файл."""
+        if self.mode != 1:
+            print(f"Неверный режим: {self.mode}, ожидается 1")
+            return False
+            
+        if not (0 <= self.number <= 9):
+            print(f"Неверный номер жеста: {self.number}, ожидается 0-9")
+            return False
+            
+        if landmark_list is None:
+            print("Список точек пуст")
+            return False
+            
+        try:
+            csv_path = 'model/keypoint_classifier/keypoint.csv'
+            with open(csv_path, 'a', newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([self.number, *landmark_list])
+            print(f"Успешно записан кадр для жеста {self.number}")
+            return True
+        except Exception as e:
+            print(f"Ошибка при записи в CSV: {e}")
+            return False
 
 # Для корректного импорта itertools
 import itertools
