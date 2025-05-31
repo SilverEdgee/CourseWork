@@ -79,9 +79,9 @@ class GestureActions:
         self.actions_mapping = {} # словарь для хранения действий для жестов
         self.load_config() # загрузка конфигурации из файла
         
-        # Добавление контроля частоты выполнения действий
-        self.action_cooldown = 1.0  # Задержка между действиями в секундах (по умолчанию 1 секунда)
-        self.last_action_time = {}  # Словарь для хранения времени последнего выполнения каждого действия
+        # добавление контроля частоты выполнения действий
+        self.action_cooldown = 1.0  # задержка между действиями в секундах (по умолчанию 1 секунда)
+        self.last_action_time = {}  # словарь для хранения времени последнего выполнения каждого действия
         
     def load_config(self):
         """Загрузка конфигурации из файла"""
@@ -96,9 +96,10 @@ class GestureActions:
                     "Close": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "w"]}},
                     "Pointer": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "p"]}},
                     "OK": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "enter"]}},
-                    "Thumb Up": {"action": "save", "params": {"hotkey": ["ctrl", "s"]}},
+                    "Thumb Up": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "s"]}},
                     "Peace Sign": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "shift", "p"]}},
                     "Thumb Down": {"action": "custom_hotkey", "params": {"hotkey": ["ctrl", "shift", "f"]}},
+                    "Rock": {"action": "custom_hotkey", "params": {"hotkey": ["f5"]}},
                 }
                 self.save_config()
         except Exception as e:
@@ -134,20 +135,20 @@ class GestureActions:
         """Получение списка доступных действий"""
         return [
             {"id": "none", "name": "Нет действия"},
+            {"id": "custom_hotkey", "name": "Комбинация клавиш"},
             {"id": "click", "name": "Клик мыши"},
             {"id": "right_click", "name": "Правый клик"},
             {"id": "double_click", "name": "Двойной клик"},
             {"id": "scroll_up", "name": "Прокрутка вверх"},
             {"id": "scroll_down", "name": "Прокрутка вниз"},
-            {"id": "save", "name": "Сохранить (Ctrl+S)"},
-            {"id": "copy", "name": "Копировать (Ctrl+C)"},
-            {"id": "paste", "name": "Вставить (Ctrl+V)"},
-            {"id": "cut", "name": "Вырезать (Ctrl+X)"},
-            {"id": "select_all", "name": "Выделить всё (Ctrl+A)"},
-            {"id": "run_code", "name": "Запустить код (F5)"},
-            {"id": "close_window", "name": "Закрыть окно (Alt+F4)"},
-            {"id": "screenshot", "name": "Сделать скриншот"},
-            {"id": "custom_hotkey", "name": "Своя комбинация клавиш"}
+            {"id": "custom_hotkey", "name": "Сохранить (Ctrl+S)"},
+            {"id": "custom_hotkey", "name": "Копировать (Ctrl+C)"},
+            {"id": "custom_hotkey", "name": "Вставить (Ctrl+V)"},
+            {"id": "custom_hotkey", "name": "Вырезать (Ctrl+X)"},
+            {"id": "custom_hotkey", "name": "Выделить всё (Ctrl+A)"},
+            {"id": "custom_hotkey", "name": "Запустить код (F5)"},
+            {"id": "custom_hotkey", "name": "Закрыть окно (Alt+F4)"},
+            {"id": "screenshot", "name": "Сделать скриншот"}
         ]
         
     def get_gesture_actions_info(self):

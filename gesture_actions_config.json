@@ -34,7 +34,7 @@
         }
     },
     "Thumb Up": {
-        "action": "save",
+        "action": "custom_hotkey",
         "params": {
             "hotkey": [
                 "ctrl",
@@ -70,7 +70,7 @@
         }
     },
     "Rock": {
-        "action": "run_code",
+        "action": "custom_hotkey",
         "params": {
             "hotkey": [
                 "f5"

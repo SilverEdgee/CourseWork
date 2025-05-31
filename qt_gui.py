@@ -25,7 +25,7 @@ QWidget {
 QGroupBox {
     border: 1px solid #3F3F46;  /* рамка группы */
     border-radius: 5px;         /* закругление углов */
-    margin-top: 10px;           /* отступ сверху */
+    margin-top: 5px;           /* отступ сверху */
     font-weight: bold;          /* жирный текст */
 }
 QGroupBox::title {
@@ -104,7 +104,6 @@ QSpinBox, QDoubleSpinBox {
 
 class VideoThread(QTimer):
     """Класс для обработки видеопотока"""
-    frame_ready = pyqtSignal(np.ndarray)
     processed_ready = pyqtSignal(np.ndarray, dict)
     
     def __init__(self, parent=None):
@@ -168,9 +167,6 @@ class VideoThread(QTimer):
         # отражение изображения по горизонтали (зеркально)
         frame = cv2.flip(frame, 1)
         
-        # отправка оригинального кадра
-        self.frame_ready.emit(frame)
-        
         # если есть обработчик, обрабатываем кадр и отправляем результат
         if self.processor is not None:
             result_frame, result_data = self.processor.process_image(frame)
@@ -231,7 +227,6 @@ class MainWindow(QMainWindow):
         
         # инициализация видеопотока
         self.video_thread = VideoThread(self)
-        self.video_thread.frame_ready.connect(self.update_camera_feed)
         self.video_thread.processed_ready.connect(self.update_processed_feed)
         
         # загрузка списка жестов
@@ -317,7 +312,7 @@ class MainWindow(QMainWindow):
         self.show_gestures_info_button = QPushButton("СПРАВКА ПО ЖЕСТАМ")
         self.show_gestures_info_button.setIcon(self.style().standardIcon(QStyle.SP_MessageBoxInformation))
         self.show_gestures_info_button.setIconSize(QSize(24, 24))
-        self.show_gestures_info_button.setMinimumHeight(40)  # Увеличиваем высоту кнопки
+        self.show_gestures_info_button.setMinimumHeight(40)
         self.show_gestures_info_button.clicked.connect(self.show_gestures_info)
         camera_layout.addWidget(self.show_gestures_info_button)
         
@@ -418,17 +413,6 @@ class MainWindow(QMainWindow):
         
         settings_layout.addWidget(recording_group)
         
-        # ----- БЛОК ДОСТУПНЫХ ЖЕСТОВ -----
-        gesture_group = QGroupBox("Доступные жесты")
-        gesture_layout = QVBoxLayout(gesture_group)
-        
-        # Список жестов
-        self.gesture_list = QListWidget()
-        self.gesture_list.setStyleSheet("min-height: 150px;")
-        gesture_layout.addWidget(self.gesture_list)
-        
-        settings_layout.addWidget(gesture_group)
-        
         # ----- БЛОК НАСТРОЙКИ ЖЕСТА (УПРОЩЕННЫЙ) -----
         action_group = QGroupBox("Настройка действия")
         action_layout = QGridLayout(action_group)
@@ -465,32 +449,15 @@ class MainWindow(QMainWindow):
         video_layout.setContentsMargins(0, 0, 0, 0)
         video_layout.setSpacing(15)
         
-        # ----- ВИДЕО ПОТОКИ (УМЕНЬШЕННЫЕ) -----
-        video_feeds = QWidget()
-        video_feeds_layout = QHBoxLayout(video_feeds)
-        video_feeds_layout.setSpacing(15)
-        
-        # Оригинальный видеопоток (уменьшенный)
-        original_group = QGroupBox("Оригинальное изображение")
-        original_layout = QVBoxLayout(original_group)
-        self.original_feed = QLabel()
-        self.original_feed.setAlignment(Qt.AlignCenter)
-        self.original_feed.setMinimumSize(320, 240)  # Уменьшенный размер видео
-        self.original_feed.setStyleSheet("background-color: #1E1E1E; border-radius: 5px; padding: 5px;")
-        original_layout.addWidget(self.original_feed)
-        video_feeds_layout.addWidget(original_group)
-        
-        # Обработанный видеопоток (уменьшенный)
+        # ----- ВИДЕО ПОТОК (БОЛЬШОЙ) -----
         processed_group = QGroupBox("Распознавание жестов")
         processed_layout = QVBoxLayout(processed_group)
         self.processed_feed = QLabel()
         self.processed_feed.setAlignment(Qt.AlignCenter)
-        self.processed_feed.setMinimumSize(320, 240)  # Уменьшенный размер видео
+        self.processed_feed.setMinimumSize(640, 480)  # Увеличенный размер видео
         self.processed_feed.setStyleSheet("background-color: #1E1E1E; border-radius: 5px; padding: 5px;")
         processed_layout.addWidget(self.processed_feed)
-        video_feeds_layout.addWidget(processed_group)
-        
-        video_layout.addWidget(video_feeds, 1)  # 1 = stretch factor (растягивается)
+        video_layout.addWidget(processed_group, 1)  # 1 = stretch factor
         
         # ----- ИНФОРМАЦИОННЫЙ БЛОК (УМЕНЬШЕННЫЙ) -----
         info_panel = QWidget()
@@ -528,20 +495,6 @@ class MainWindow(QMainWindow):
         info_layout.addWidget(log_group)
         
         video_layout.addWidget(info_panel)
-        
-        # ----- КНОПКИ УПРАВЛЕНИЯ (ВНИЗУ) -----
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
-        
-        # Кнопка запуска/паузы распознавания
-        self.recognition_button = QPushButton("ЗАПУСТИТЬ РАСПОЗНАВАНИЕ")
-        self.recognition_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-        self.recognition_button.setIconSize(QSize(24, 24))
-        self.recognition_button.setMinimumHeight(40)
-        self.recognition_button.setEnabled(False)  # Отключено до запуска камеры
-        buttons_layout.addWidget(self.recognition_button)
-        
-        video_layout.addLayout(buttons_layout)
         
         # Добавляем правую панель в основной layout
         main_layout.addWidget(video_panel, 3)  # 3 = растягивание в 3 раза больше чем левая панель
@@ -583,7 +536,6 @@ class MainWindow(QMainWindow):
             if self.video_thread.start_camera(camera_id, self.camera_width, self.camera_height):
                 self.camera_button.setText("ОСТАНОВИТЬ КАМЕРУ")
                 self.camera_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
-                self.recognition_button.setEnabled(True)
                 self.log_event("Камера запущена")
             else:
                 QMessageBox.critical(self, "Ошибка", "Не удалось запустить камеру!")
@@ -592,22 +544,8 @@ class MainWindow(QMainWindow):
             self.video_thread.stop_camera()
             self.camera_button.setText("ЗАПУСТИТЬ КАМЕРУ")
             self.camera_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-            self.recognition_button.setEnabled(False)
-            self.original_feed.clear()
             self.processed_feed.clear()
             self.log_event("Камера остановлена")
-            
-    def update_camera_feed(self, frame):
-        """Обновление изображения с камеры"""
-        h, w, ch = frame.shape
-        bytes_per_line = ch * w
-        qt_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
-        pixmap = QPixmap.fromImage(qt_image)
-        
-        # Добавляем границу к изображению
-        self.original_feed.setPixmap(pixmap.scaled(
-            self.original_feed.width(), self.original_feed.height(),
-            Qt.KeepAspectRatio, Qt.SmoothTransformation))
             
     def update_processed_feed(self, frame, data):
         """Обновление обработанного изображения и информации о распознавании"""
@@ -632,16 +570,6 @@ class MainWindow(QMainWindow):
         if "hand_sign" in data:
             gesture_name = data["hand_sign"]
             self.current_gesture_label.setText(gesture_name)
-            
-            # Визуальное выделение текущего жеста в списке
-            for i in range(self.gesture_list.count()):
-                item = self.gesture_list.item(i)
-                if item.text() == gesture_name:
-                    item.setBackground(QColor(0, 122, 204, 100))
-                    item.setForeground(QColor(255, 255, 255))
-                else:
-                    item.setBackground(QColor(0, 0, 0, 0))
-                    item.setForeground(QColor(230, 230, 230))
             
             # Если есть действие для этого жеста, выполняем его
             if gesture_name in self.gesture_actions.actions_mapping:
@@ -744,24 +672,11 @@ class MainWindow(QMainWindow):
                 lines = f.readlines()
                 gestures = [line.strip() for line in lines if line.strip()]
                 
-                # Очистка списков
-                self.gesture_list.clear()
+                # Очистка комбобокса
                 self.action_gesture_selector.clear()
                 
-                # Заполнение списков
+                # Заполнение комбобокса
                 for gesture in gestures:
-                    # Добавляем в список жестов с выделением
-                    item = QListWidgetItem(gesture)
-                    action_display = "Нет"
-                    
-                    # Проверяем, есть ли действие для этого жеста
-                    if gesture in self.gesture_actions.actions_mapping:
-                        action_config = self.gesture_actions.actions_mapping[gesture]
-                        action_type = action_config["action"]
-                        action_display = self.get_action_display_name(action_type, action_config["params"])
-                        
-                    item.setToolTip(f"Жест: {gesture}\nДействие: {action_display}")
-                    self.gesture_list.addItem(item)
                     self.action_gesture_selector.addItem(gesture)
                     
                 self.log_event(f"Загружено {len(gestures)} жестов")
@@ -802,22 +717,18 @@ class MainWindow(QMainWindow):
         # Сохраняем настройку
         self.gesture_actions.add_gesture_action(gesture, action_type)
         
-        # Обновляем подсказку для элемента в списке жестов
-        for i in range(self.gesture_list.count()):
-            item = self.gesture_list.item(i)
-            if item.text() == gesture:
-                item.setToolTip(f"Жест: {gesture}\nДействие: {action_type}")
-                break
+        # Получаем понятное название действия
+        action_display = self.get_action_display_name(action_type)
         
         # Показываем уведомление
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Настройка сохранена")
-        msg.setText(f"Для жеста '{gesture}' установлено действие '{action_type}'")
+        msg.setText(f"Для жеста '{gesture}' установлено действие '{action_display}'")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
         
-        self.log_event(f"Настройка действия сохранена: {gesture} → {action_type}")
+        self.log_event(f"Настройка действия сохранена: {gesture} → {action_display}")
     
     def log_event(self, message):
         """Добавление сообщения в лог событий"""
@@ -865,11 +776,40 @@ class MainWindow(QMainWindow):
         
         dialog = QDialog(self)
         dialog.setWindowTitle("Справка по жестам IDE")
-        dialog.setMinimumWidth(600)
-        dialog.setMinimumHeight(400)
+        dialog.setMinimumWidth(800)  # Увеличили ширину
+        dialog.setMinimumHeight(600)  # Увеличили высоту
         dialog.setStyleSheet("background-color: #2D2D30; color: #E6E6E6;")
         
         layout = QVBoxLayout(dialog)
+        
+        # Добавляем заголовок
+        header_label = QLabel("Справочник по жестам и действиям")
+        header_label.setStyleSheet("""
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background-color: #007ACC;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        """)
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+        
+        # Добавляем описание
+        description_label = QLabel(
+            "Здесь представлены все доступные жесты и их назначенные действия. "
+            "Вы можете изменить действия для жестов в разделе 'Настройка действия'."
+        )
+        description_label.setStyleSheet("""
+            color: #E6E6E6;
+            padding: 10px;
+            background-color: #3E3E42;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        """)
+        description_label.setWordWrap(True)
+        layout.addWidget(description_label)
         
         # Создаем таблицу
         table = QTableWidget()
@@ -881,37 +821,93 @@ class MainWindow(QMainWindow):
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
-        header.setStyleSheet("QHeaderView::section {background-color: #007ACC; color: white; padding: 5px; border: 1px solid #3F3F46;}")
+        header.setStyleSheet("""
+            QHeaderView::section {
+                background-color: #007ACC;
+                color: white;
+                padding: 8px;
+                border: 1px solid #3F3F46;
+                font-weight: bold;
+            }
+        """)
         
         # Настраиваем вертикальный заголовок
         table.verticalHeader().setVisible(False)
+        
+        # Настраиваем стиль таблицы
+        table.setStyleSheet("""
+            QTableWidget {
+                background-color: #2D2D30;
+                gridline-color: #3F3F46;
+                border: 1px solid #3F3F46;
+                border-radius: 5px;
+            }
+            QTableWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #3F3F46;
+            }
+            QTableWidget::item:selected {
+                background-color: #007ACC;
+                color: white;
+            }
+        """)
         
         # Заполняем таблицу
         for row, (gesture, action) in enumerate(gestures_info):
             # Жест
             gesture_item = QTableWidgetItem(gesture)
             gesture_item.setForeground(QColor("#E6E6E6"))
-            gesture_item.setFont(QFont("Arial", 10, QFont.Bold))
+            gesture_item.setFont(QFont("Arial", 11, QFont.Bold))
             table.setItem(row, 0, gesture_item)
             
             # Действие
             action_item = QTableWidgetItem(action)
             action_item.setForeground(QColor("#E6E6E6"))
+            action_item.setFont(QFont("Arial", 11))
             table.setItem(row, 1, action_item)
         
         layout.addWidget(table)
         
-        # Добавляем информационный текст
-        info_label = QLabel("Чтобы изменить действие, перейдите в раздел <b>Настройка действия</b>.")
-        info_label.setStyleSheet("color: #E6E6E6; margin: 10px;")
-        info_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(info_label)
+        # Добавляем кнопки управления
+        buttons_layout = QHBoxLayout()
+        
+        # Кнопка обновления
+        refresh_button = QPushButton("Обновить")
+        refresh_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
+        refresh_button.setStyleSheet("""
+            QPushButton {
+                background-color: #007ACC;
+                color: white;
+                padding: 8px 15px;
+                border-radius: 3px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #1C97EA;
+            }
+        """)
+        refresh_button.clicked.connect(lambda: self.load_gesture_list())
+        buttons_layout.addWidget(refresh_button)
         
         # Кнопка закрытия
         close_button = QPushButton("Закрыть")
-        close_button.setStyleSheet("background-color: #007ACC; color: white; padding: 5px 15px;")
+        close_button.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3E3E42;
+                color: white;
+                padding: 8px 15px;
+                border-radius: 3px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #4E4E52;
+            }
+        """)
         close_button.clicked.connect(dialog.close)
-        layout.addWidget(close_button)
+        buttons_layout.addWidget(close_button)
+        
+        layout.addLayout(buttons_layout)
         
         dialog.exec_()
 
