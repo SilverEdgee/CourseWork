@@ -64,7 +64,6 @@ if not PYAUTOGUI_AVAILABLE:
             import time
             return time
     
-    # Заменяем модуль pyautogui на заглушку
     pyautogui = PyAutoGUIStub()
 
 class GestureActions:
@@ -79,9 +78,9 @@ class GestureActions:
         self.actions_mapping = {} # словарь для хранения действий для жестов
         self.load_config() # загрузка конфигурации из файла
         
-        # добавление контроля частоты выполнения действий
+        # добавление глобального контроля частоты выполнения действий
         self.action_cooldown = 1.0  # задержка между действиями в секундах (по умолчанию 1 секунда)
-        self.last_action_time = {}  # словарь для хранения времени последнего выполнения каждого действия
+        self.last_action_time = 0  # время последнего выполнения любого действия
         
     def load_config(self):
         """Загрузка конфигурации из файла"""
@@ -104,7 +103,6 @@ class GestureActions:
                 self.save_config()
         except Exception as e:
             logger.error(f"Ошибка при загрузке конфигурации: {e}")
-            # Создаем пустую конфигурацию
             self.actions_mapping = {}
             
     def save_config(self):
@@ -136,63 +134,45 @@ class GestureActions:
         return [
             # Базовые действия
             {"id": "none", "name": "Нет действия"},
-            {"id": "custom_hotkey", "name": "Своя комбинация клавиш"},
             
             # Действия мыши
-            {"id": "click", "name": "Клик мыши"},
-            {"id": "right_click", "name": "Правый клик"},
-            {"id": "double_click", "name": "Двойной клик"},
-            {"id": "scroll_up", "name": "Прокрутка вверх"},
-            {"id": "scroll_down", "name": "Прокрутка вниз"},
+            {"id": "click", "name": "Мышь: левый клик"},
+            {"id": "right_click", "name": "Мышь: правый клик"},
+            {"id": "double_click", "name": "Мышь: двойной клик"},
+            {"id": "scroll_up", "name": "Мышь: прокрутка вверх"},
+            {"id": "scroll_down", "name": "Мышь: прокрутка вниз"},
             
             # Буфер обмена
-            {"id": "copy", "name": "Копировать (Ctrl+C)"},
-            {"id": "paste", "name": "Вставить (Ctrl+V)"},
-            {"id": "cut", "name": "Вырезать (Ctrl+X)"},
+            {"id": "copy", "name": "Комбинация клавиш: копировать (Ctrl+C)"},
+            {"id": "paste", "name": "Комбинация клавиш: вставить (Ctrl+V)"},
+            {"id": "cut", "name": "Комбинация клавиш: вырезать (Ctrl+X)"},
             
             # Общие команды редактирования
-            {"id": "select_all", "name": "Выделить всё (Ctrl+A)"},
-            {"id": "undo", "name": "Отменить (Ctrl+Z)"},
-            {"id": "redo", "name": "Повторить (Ctrl+Y)"},
-            {"id": "save", "name": "Сохранить (Ctrl+S)"},
+            {"id": "select_all", "name": "Комбинация клавиш: выделить всё (Ctrl+A)"},
+            {"id": "undo", "name": "Комбинация клавиш: отменить (Ctrl+Z)"},
+            {"id": "redo", "name": "Комбинация клавиш: повторить (Ctrl+Y)"},
+            {"id": "save", "name": "Комбинация клавиш: сохранить (Ctrl+S)"},
             
             # Команды IDE
-            {"id": "run_code", "name": "Запустить код (F5)"},
-            {"id": "debug", "name": "Запустить отладку (F9)"},
-            {"id": "stop_debug", "name": "Остановить отладку (Shift+F5)"},
-            {"id": "toggle_breakpoint", "name": "Поставить/убрать точку останова (F9)"},
-            {"id": "step_over", "name": "Шаг с обходом (F10)"},
-            {"id": "step_into", "name": "Шаг с заходом (F11)"},
+            {"id": "run_code", "name": "Комбинация клавиш: запустить код (F5)"},
             
             # Команды навигации в IDE
-            {"id": "go_to_definition", "name": "Перейти к определению (F12)"},
-            {"id": "find", "name": "Найти (Ctrl+F)"},
-            {"id": "find_in_files", "name": "Найти в файлах (Ctrl+Shift+F)"},
-            {"id": "quick_open", "name": "Быстрое открытие файла (Ctrl+P)"},
-            {"id": "command_palette", "name": "Палитра команд (Ctrl+Shift+P)"},
+            {"id": "go_to_definition", "name": "Комбинация клавиш: перейти к определению (F12)"},
+            {"id": "find", "name": "Комбинация клавиш: найти (Ctrl+F)"},
+            {"id": "find_in_files", "name": "Комбинация клавиш: найти в файлах (Ctrl+Shift+F)"},
+            {"id": "quick_open", "name": "Комбинация клавиш: быстрое открытие файла (Ctrl+P)"},
+            {"id": "command_palette", "name": "Комбинация клавиш: палитра команд (Ctrl+Shift+P)"},
             
             # Работа с файлами и окнами
-            {"id": "new_file", "name": "Новый файл (Ctrl+N)"},
-            {"id": "open_file", "name": "Открыть файл (Ctrl+O)"},
-            {"id": "close_file", "name": "Закрыть файл (Ctrl+W)"},
-            {"id": "close_window", "name": "Закрыть окно (Alt+F4)"},
-            {"id": "switch_tab_next", "name": "Следующая вкладка (Ctrl+Tab)"},
-            {"id": "switch_tab_prev", "name": "Предыдущая вкладка (Ctrl+Shift+Tab)"},
-            
-            # Форматирование кода
-            {"id": "format_code", "name": "Форматировать код (Shift+Alt+F)"},
-            {"id": "comment_line", "name": "Закомментировать строки (Ctrl+/)"},
-            {"id": "indent", "name": "Увеличить отступ (Tab)"},
-            {"id": "outdent", "name": "Уменьшить отступ (Shift+Tab)"},
+            {"id": "new_file", "name": "Комбинация клавиш: новый файл (Ctrl+N)"},
+            {"id": "open_file", "name": "Комбинация клавиш: открыть файл (Ctrl+O)"},
+            {"id": "close_file", "name": "Комбинация клавиш: закрыть файл (Ctrl+W)"},
+            {"id": "close_window", "name": "Комбинация клавиш: закрыть окно (Alt+F4)"},
+            {"id": "switch_tab_next", "name": "Комбинация клавиш: следующая вкладка (Ctrl+Tab)"},
+            {"id": "switch_tab_prev", "name": "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)"},
             
             # Системные команды
-            {"id": "screenshot", "name": "Сделать скриншот"},
-            {"id": "volume_up", "name": "Увеличить громкость"},
-            {"id": "volume_down", "name": "Уменьшить громкость"},
-            {"id": "volume_mute", "name": "Выключить звук"},
-            {"id": "media_play_pause", "name": "Воспроизведение/Пауза"},
-            {"id": "media_next", "name": "Следующий трек"},
-            {"id": "media_prev", "name": "Предыдущий трек"}
+            {"id": "screenshot", "name": "Системное: сделать скриншот"}
         ]
         
     def get_gesture_actions_info(self):
@@ -205,38 +185,32 @@ class GestureActions:
         info_list = []
         action_descriptions = {
             "none": "Нет действия",
-            "click": "Клик мыши",
-            "right_click": "Правый клик мыши",
-            "double_click": "Двойной клик мыши", 
-            "scroll_up": "Прокрутка вверх",
-            "scroll_down": "Прокрутка вниз",
-            "save": "Сохранить файл (Ctrl+S)",
-            "copy": "Копировать выделенное (Ctrl+C)",
-            "paste": "Вставить из буфера (Ctrl+V)",
-            "cut": "Вырезать выделенное (Ctrl+X)",
-            "select_all": "Выделить всё (Ctrl+A)",
-            "run_code": "Запустить код (F5)",
-            "close_window": "Закрыть окно (Alt+F4)",
-            "screenshot": "Сделать скриншот экрана",
-            "custom_hotkey": "Пользовательское сочетание клавиш"
-        }
-        
-        ide_hotkey_descriptions = {
-            "ctrl+o": "Открыть файл",
-            "ctrl+w": "Закрыть файл",
-            "ctrl+p": "Быстрый поиск файлов",
-            "ctrl+enter": "Выполнить команду",
-            "ctrl+s": "Сохранить файл",
-            "ctrl+shift+p": "Открыть палитру команд",
-            "ctrl+shift+f": "Поиск по всем файлам",
-            "ctrl+shift+b": "Запустить сборку проекта",
-            "f5": "Запустить отладку",
-            "ctrl+f5": "Запустить без отладки",
-            "ctrl+c": "Копировать",
-            "ctrl+v": "Вставить",
-            "ctrl+x": "Вырезать",
-            "ctrl+a": "Выделить всё",
-            "alt+f4": "Закрыть окно"
+            "click": "Мышь: левый клик",
+            "right_click": "Мышь: правый клик",
+            "double_click": "Мышь: двойной клик", 
+            "scroll_up": "Мышь: прокрутка вверх",
+            "scroll_down": "Мышь: прокрутка вниз",
+            "save": "Комбинация клавиш: сохранить файл (Ctrl+S)",
+            "copy": "Комбинация клавиш: копировать (Ctrl+C)",
+            "paste": "Комбинация клавиш: вставить (Ctrl+V)",
+            "cut": "Комбинация клавиш: вырезать (Ctrl+X)",
+            "select_all": "Комбинация клавиш: выделить всё (Ctrl+A)",
+            "undo": "Комбинация клавиш: отменить (Ctrl+Z)",
+            "redo": "Комбинация клавиш: повторить (Ctrl+Y)",
+            "run_code": "Комбинация клавиш: запустить код (F5)",
+            "go_to_definition": "Комбинация клавиш: перейти к определению (F12)",
+            "find": "Комбинация клавиш: найти (Ctrl+F)",
+            "find_in_files": "Комбинация клавиш: найти в файлах (Ctrl+Shift+F)",
+            "quick_open": "Комбинация клавиш: быстрое открытие файла (Ctrl+P)",
+            "command_palette": "Комбинация клавиш: палитра команд (Ctrl+Shift+P)",
+            "new_file": "Комбинация клавиш: новый файл (Ctrl+N)",
+            "open_file": "Комбинация клавиш: открыть файл (Ctrl+O)",
+            "close_file": "Комбинация клавиш: закрыть файл (Ctrl+W)",
+            "close_window": "Комбинация клавиш: закрыть окно (Alt+F4)",
+            "switch_tab_next": "Комбинация клавиш: следующая вкладка (Ctrl+Tab)",
+            "switch_tab_prev": "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)",
+            "screenshot": "Системное: сделать скриншот",
+            "custom_hotkey": "Пользовательская комбинация клавиш"
         }
         
         for gesture_name, action_config in self.actions_mapping.items():
@@ -248,8 +222,7 @@ class GestureActions:
             
             if action_type == "custom_hotkey" and "hotkey" in params:
                 hotkey_str = "+".join(params["hotkey"])
-                ide_description = ide_hotkey_descriptions.get(hotkey_str.lower(), "Пользовательское сочетание клавиш")
-                details = f"{hotkey_str} - {ide_description}"
+                details = f"Комбинация клавиш: {hotkey_str}"
             
             info_list.append({
                 "gesture": gesture_name,
@@ -263,18 +236,9 @@ class GestureActions:
     def set_action_cooldown(self, seconds):
         """Установка задержки между выполнением действий"""
         self.action_cooldown = max(0.1, float(seconds))
-        logger.info(f"Установлена задержка между действиями: {self.action_cooldown} сек")
-        
-    def _check_cooldown(self, action_type):
-        """Проверка таймаута между действиями"""
-        current_time = time.time()
-        last_time = self.last_action_time.get(action_type, 0)
-        
-        if current_time - last_time < self.action_cooldown:
-            return False
-            
-        self.last_action_time[action_type] = current_time
-        return True
+        logger.info(f"Установлена глобальная задержка между действиями: {self.action_cooldown} сек")
+        # Сбрасываем время последнего действия при изменении задержки
+        self.last_action_time = 0
         
     def execute_action(self, gesture_name, x_pos=None, y_pos=None):
         """
@@ -295,283 +259,183 @@ class GestureActions:
         if gesture_name not in self.actions_mapping:
             logger.warning(f"Жест '{gesture_name}' не найден в конфигурации")
             return False
+
+        # Проверяем глобальную задержку перед выполнением любого действия
+        current_time = time.time()
+        if current_time - self.last_action_time < self.action_cooldown:
+            logger.info(f"Жест {gesture_name} пропущен: не прошло {self.action_cooldown} сек с последнего действия")
+            return False
+            
+        # Обновляем время последнего действия
+        self.last_action_time = current_time
         
         action_config = self.actions_mapping[gesture_name]
         action_type = action_config["action"]
         params = action_config["params"]
+
+        # Получаем русское описание действия
+        action_descriptions = {
+            "none": "Нет действия",
+            "click": "Мышь: левый клик",
+            "right_click": "Мышь: правый клик",
+            "double_click": "Мышь: двойной клик", 
+            "scroll_up": "Мышь: прокрутка вверх",
+            "scroll_down": "Мышь: прокрутка вниз",
+            "save": "Комбинация клавиш: сохранить файл (Ctrl+S)",
+            "copy": "Комбинация клавиш: копировать (Ctrl+C)",
+            "paste": "Комбинация клавиш: вставить (Ctrl+V)",
+            "cut": "Комбинация клавиш: вырезать (Ctrl+X)",
+            "select_all": "Комбинация клавиш: выделить всё (Ctrl+A)",
+            "undo": "Комбинация клавиш: отменить (Ctrl+Z)",
+            "redo": "Комбинация клавиш: повторить (Ctrl+Y)",
+            "run_code": "Комбинация клавиш: запустить код (F5)",
+            "go_to_definition": "Комбинация клавиш: перейти к определению (F12)",
+            "find": "Комбинация клавиш: найти (Ctrl+F)",
+            "find_in_files": "Комбинация клавиш: найти в файлах (Ctrl+Shift+F)",
+            "quick_open": "Комбинация клавиш: быстрое открытие файла (Ctrl+P)",
+            "command_palette": "Комбинация клавиш: палитра команд (Ctrl+Shift+P)",
+            "new_file": "Комбинация клавиш: новый файл (Ctrl+N)",
+            "open_file": "Комбинация клавиш: открыть файл (Ctrl+O)",
+            "close_file": "Комбинация клавиш: закрыть файл (Ctrl+W)",
+            "close_window": "Комбинация клавиш: закрыть окно (Alt+F4)",
+            "switch_tab_next": "Комбинация клавиш: следующая вкладка (Ctrl+Tab)",
+            "switch_tab_prev": "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)",
+            "screenshot": "Системное: сделать скриншот",
+            "custom_hotkey": "Пользовательская комбинация клавиш"
+        }
+        action_description = action_descriptions.get(action_type, f"Неизвестное действие: {action_type}")
         
         try:
             # Получаем размеры экрана для справки
             screen_width, screen_height = pyautogui.size()
             
             if action_type == "none":
+                logger.info(f"Выполнено действие: {action_description}")
                 return True
                 
             # Базовые действия мыши
             elif action_type == "click":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.click()
-                logger.info(f"Выполнен клик мыши")
+                logger.info(f"Выполнено действие: {action_description}")
                     
             elif action_type == "right_click":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.rightClick()
-                logger.info(f"Выполнен правый клик мыши")
+                logger.info(f"Выполнено действие: {action_description}")
                     
             elif action_type == "double_click":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.doubleClick()
-                logger.info(f"Выполнен двойной клик мыши")
+                logger.info(f"Выполнено действие: {action_description}")
                     
             elif action_type == "scroll_up":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.scroll(100)
-                logger.info(f"Выполнена прокрутка вверх")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "scroll_down":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.scroll(-100)
-                logger.info(f"Выполнена прокрутка вниз")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Буфер обмена
             elif action_type == "copy":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'c')
-                logger.info(f"Выполнено копирование")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "paste":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'v')
-                logger.info(f"Выполнена вставка")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "cut":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'x')
-                logger.info(f"Выполнено вырезание")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Общие команды редактирования
             elif action_type == "select_all":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'a')
-                logger.info(f"Выполнено выделение всего")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "undo":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'z')
-                logger.info(f"Выполнена отмена действия")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "redo":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'y')
-                logger.info(f"Выполнен повтор действия")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "save":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 's')
-                logger.info(f"Выполнено сохранение")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Команды IDE
             elif action_type == "run_code":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.press('f5')
-                logger.info(f"Выполнен запуск кода")
-                
-            elif action_type == "debug":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('f9')
-                logger.info(f"Запущена отладка")
-                
-            elif action_type == "stop_debug":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.hotkey('shift', 'f5')
-                logger.info(f"Остановлена отладка")
-                
-            elif action_type == "toggle_breakpoint":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('f9')
-                logger.info(f"Переключена точка останова")
-                
-            elif action_type == "step_over":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('f10')
-                logger.info(f"Выполнен шаг с обходом")
-                
-            elif action_type == "step_into":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('f11')
-                logger.info(f"Выполнен шаг с заходом")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Команды навигации в IDE
             elif action_type == "go_to_definition":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.press('f12')
-                logger.info(f"Переход к определению")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "find":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'f')
-                logger.info(f"Открыт поиск")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "find_in_files":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'shift', 'f')
-                logger.info(f"Открыт поиск по файлам")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "quick_open":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'p')
-                logger.info(f"Открыто быстрое открытие файла")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "command_palette":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'shift', 'p')
-                logger.info(f"Открыта палитра команд")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Работа с файлами и окнами
             elif action_type == "new_file":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'n')
-                logger.info(f"Создан новый файл")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "open_file":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'o')
-                logger.info(f"Открыт файл")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "close_file":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'w')
-                logger.info(f"Закрыт файл")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "close_window":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('alt', 'f4')
-                logger.info(f"Закрыто окно")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "switch_tab_next":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'tab')
-                logger.info(f"Переход к следующей вкладке")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             elif action_type == "switch_tab_prev":
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey('ctrl', 'shift', 'tab')
-                logger.info(f"Переход к предыдущей вкладке")
-                
-            # Форматирование кода
-            elif action_type == "format_code":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.hotkey('shift', 'alt', 'f')
-                logger.info(f"Форматирование кода")
-                
-            elif action_type == "comment_line":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.hotkey('ctrl', '/')
-                logger.info(f"Комментирование строк")
-                
-            elif action_type == "indent":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('tab')
-                logger.info(f"Увеличен отступ")
-                
-            elif action_type == "outdent":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.hotkey('shift', 'tab')
-                logger.info(f"Уменьшен отступ")
+                logger.info(f"Выполнено действие: {action_description}")
                 
             # Системные команды
             elif action_type == "screenshot":
-                if not self._check_cooldown(action_type):
-                    return False
                 screenshot = pyautogui.screenshot()
                 screenshot_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                         f"screenshot_{pyautogui.time().strftime('%Y%m%d_%H%M%S')}.png")
+                                         f"screenshot_{time.strftime('%Y%m%d_%H%M%S')}.png")
                 screenshot.save(screenshot_path)
-                logger.info(f"Скриншот сохранен: {screenshot_path}")
-                
-            elif action_type == "volume_up":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('volumeup')
-                logger.info(f"Увеличена громкость")
-                
-            elif action_type == "volume_down":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('volumedown')
-                logger.info(f"Уменьшена громкость")
-                
-            elif action_type == "volume_mute":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('volumemute')
-                logger.info(f"Звук выключен/включен")
-                
-            elif action_type == "media_play_pause":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('playpause')
-                logger.info(f"Воспроизведение/пауза")
-                
-            elif action_type == "media_next":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('nexttrack')
-                logger.info(f"Следующий трек")
-                
-            elif action_type == "media_prev":
-                if not self._check_cooldown(action_type):
-                    return False
-                pyautogui.press('prevtrack')
-                logger.info(f"Предыдущий трек")
+                logger.info(f"Выполнено действие: {action_description}. Сохранено в: {screenshot_path}")
                 
             elif action_type == "custom_hotkey" and "hotkey" in params:
-                if not self._check_cooldown(action_type):
-                    return False
                 pyautogui.hotkey(*params["hotkey"])
-                logger.info(f"Выполнено нажатие комбинации клавиш: {params['hotkey']}")
+                hotkey_str = "+".join(params["hotkey"])
+                logger.info(f"Выполнено действие: Комбинация клавиш: {hotkey_str}")
                 
             else:
-                logger.warning(f"Неизвестный тип действия: {action_type}")
+                logger.warning(f"Неизвестный тип действия: {action_description}")
                 return False
                 
             return True
             
         except Exception as e:
-            logger.error(f"Ошибка при выполнении действия '{action_type}' для жеста '{gesture_name}': {e}")
+            logger.error(f"Ошибка при выполнении действия '{action_description}' для жеста '{gesture_name}': {e}")
             return False
 
 

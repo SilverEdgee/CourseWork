@@ -5,7 +5,8 @@ import cv2
 import numpy as np
 import mediapipe as mp
 from collections import Counter
-
+import itertools
+import csv 
 # Импорт классификаторов
 from model import KeyPointClassifier
 from utils import CvFpsCalc
@@ -106,35 +107,35 @@ class GestureProcessor:
         # Разрешение записи в изображение
         image_rgb.flags.writeable = True
         
-        # Подготовка словаря с данными распознавания
+        # подготовка словаря с данными распознавания
         result_data = {
             "fps": fps,
             "mode": self.mode,
             "number": self.number
         }
         
-        # Если обнаружены руки
+        # если обнаружены руки
         if results.multi_hand_landmarks is not None:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                # Расчет ограничивающего прямоугольника
+                # расчет ограничивающего прямоугольника
                 brect = self._calc_bounding_rect(debug_image, hand_landmarks)
                 
-                # Вычисление координат ключевых точек
+                # вычисление координат ключевых точек
                 landmark_list = self._calc_landmark_list(debug_image, hand_landmarks)
                 
-                # Преобразование координат в относительные
+                # преобразование координат в относительные
                 pre_processed_landmark_list = self._pre_process_landmark(landmark_list)
                 
-                # Распознавание жеста руки
+                # распознавание жеста руки
                 hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
                 
-                # Сохранение результатов в словарь
+                # сохранение результатов в словарь
                 result_data["hand_sign_id"] = hand_sign_id
                 result_data["hand_sign"] = self.keypoint_classifier_labels[hand_sign_id]
                 result_data["handedness"] = handedness.classification[0].label[0]  # 'R' или 'L'
                 result_data["landmark_list"] = pre_processed_landmark_list  # Сохраняем точки для записи
                 
-                # Отрисовка результатов на изображении
+                # отрисовка результатов на изображении
                 debug_image = self._draw_bounding_rect(debug_image, brect)
                 debug_image = self._draw_landmarks(debug_image, landmark_list)
                 debug_image = self._draw_info_text(
@@ -144,7 +145,7 @@ class GestureProcessor:
                     self.keypoint_classifier_labels[hand_sign_id]
                 )
         
-        # Отрисовка информации (FPS, режим, номер)
+        # отрисовка информации (FPS, режим, номер)
         debug_image = self._draw_info(debug_image, fps, self.mode, self.number)
         
         return debug_image, result_data
@@ -182,7 +183,7 @@ class GestureProcessor:
         
         landmark_point = []
         
-        # Перебор всех 21 точки руки
+        # перебор всех 21 точки руки
         for landmark in landmarks.landmark:
             landmark_x = min(int(landmark.x * image_width), image_width - 1)
             landmark_y = min(int(landmark.y * image_height), image_height - 1)
@@ -195,7 +196,7 @@ class GestureProcessor:
         """Предобработка координат ключевых точек для классификатора."""
         temp_landmark_list = copy.deepcopy(landmark_list)
         
-        # Преобразование в относительные координаты
+        # преобразование в относительные координаты
         base_x, base_y = 0, 0
         for index, landmark_point in enumerate(temp_landmark_list):
             if index == 0:
@@ -204,7 +205,7 @@ class GestureProcessor:
             temp_landmark_list[index][0] = temp_landmark_list[index][0] - base_x
             temp_landmark_list[index][1] = temp_landmark_list[index][1] - base_y
             
-        # Преобразование в одномерный список itertools
+        # преобразование в одномерный список itertools(типо все допмассивы в один)
         temp_landmark_list = list(
             itertools.chain.from_iterable(temp_landmark_list))
             
@@ -220,7 +221,7 @@ class GestureProcessor:
         
     def _draw_landmarks(self, image, landmark_points):
         """Отрисовка ключевых точек руки."""
-        # Соединения между точками
+        # соединения между точками
         connections = [
             (0, 1), (1, 2), (2, 3), (3, 4),  # Большой палец
             (0, 5), (5, 6), (6, 7), (7, 8),  # Указательный палец
@@ -248,7 +249,7 @@ class GestureProcessor:
             else:
                 cv2.circle(image, point, 5, (0, 255, 255), -1)
                 
-        # Рисуем линии
+        # линии
         for connection in connections:
             start_idx, end_idx = connection
             cv2.line(image, landmark_points[start_idx], landmark_points[end_idx], (0, 255, 0), 2)
@@ -278,7 +279,7 @@ class GestureProcessor:
         cv2.putText(image, "FPS:" + str(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
                    1.0, (255, 255, 255), 2, cv2.LINE_AA)
 
-        if mode == 1:  # Режим записи жестов
+        if mode == 1:  # режим записи жестов
             cv2.putText(image, "MODE: Recording Key Point", (10, 90),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                        cv2.LINE_AA)
@@ -313,6 +314,3 @@ class GestureProcessor:
             print(f"Ошибка при записи в CSV: {e}")
             return False
 
-# Для корректного импорта itertools
-import itertools
-import csv 

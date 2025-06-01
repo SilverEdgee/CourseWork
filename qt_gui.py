@@ -604,25 +604,71 @@ class MainWindow(QMainWindow):
                 hotkey = "+".join(params["hotkey"])
                 return f"Комбинация клавиш: {hotkey}"
             return "Комбинация клавиш"
+            
+        # Действия мыши
         elif action_type == "click":
-            return "Клик мыши"
+            return "Мышь: левый клик"
         elif action_type == "double_click":
-            return "Двойной клик мыши"
+            return "Мышь: двойной клик"
         elif action_type == "right_click":
-            return "Правый клик мыши"
+            return "Мышь: правый клик"
         elif action_type == "scroll_up":
-            return "Прокрутка вверх"
+            return "Мышь: прокрутка вверх"
         elif action_type == "scroll_down":
-            return "Прокрутка вниз"
-        elif action_type == "drag":
-            return "Перетаскивание"
-        elif action_type == "app_execute":
-            if params and "path" in params:
-                app_name = params["path"].split("/")[-1]
-                return f"Запуск приложения: {app_name}"
-            return "Запуск приложения"
+            return "Мышь: прокрутка вниз"
+            
+        # Буфер обмена
+        elif action_type == "copy":
+            return "Комбинация клавиш: копировать (Ctrl+C)"
+        elif action_type == "paste":
+            return "Комбинация клавиш: вставить (Ctrl+V)"
+        elif action_type == "cut":
+            return "Комбинация клавиш: вырезать (Ctrl+X)"
+            
+        # Общие команды редактирования
+        elif action_type == "select_all":
+            return "Комбинация клавиш: выделить всё (Ctrl+A)"
+        elif action_type == "undo":
+            return "Комбинация клавиш: отменить (Ctrl+Z)"
+        elif action_type == "redo":
+            return "Комбинация клавиш: повторить (Ctrl+Y)"
+        elif action_type == "save":
+            return "Комбинация клавиш: сохранить (Ctrl+S)"
+            
+        # Команды IDE
+        elif action_type == "run_code":
+            return "Комбинация клавиш: запустить код (F5)"
+        elif action_type == "go_to_definition":
+            return "Комбинация клавиш: перейти к определению (F12)"
+        elif action_type == "find":
+            return "Комбинация клавиш: найти (Ctrl+F)"
+        elif action_type == "find_in_files":
+            return "Комбинация клавиш: найти в файлах (Ctrl+Shift+F)"
+        elif action_type == "quick_open":
+            return "Комбинация клавиш: быстрое открытие файла (Ctrl+P)"
+        elif action_type == "command_palette":
+            return "Комбинация клавиш: палитра команд (Ctrl+Shift+P)"
+            
+        # Работа с файлами и окнами
+        elif action_type == "new_file":
+            return "Комбинация клавиш: новый файл (Ctrl+N)"
+        elif action_type == "open_file":
+            return "Комбинация клавиш: открыть файл (Ctrl+O)"
+        elif action_type == "close_file":
+            return "Комбинация клавиш: закрыть файл (Ctrl+W)"
+        elif action_type == "close_window":
+            return "Комбинация клавиш: закрыть окно (Alt+F4)"
+        elif action_type == "switch_tab_next":
+            return "Комбинация клавиш: следующая вкладка (Ctrl+Tab)"
+        elif action_type == "switch_tab_prev":
+            return "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)"
+            
+        # Системные команды
+        elif action_type == "screenshot":
+            return "Системное: сделать скриншот"
+            
         # Возвращаем оригинальное название, если неизвестный тип
-        return action_type
+        return f"Неизвестное действие: {action_type}"
 
     def apply_mediapipe_settings(self):
         """Применение настроек MediaPipe"""
@@ -995,8 +1041,6 @@ class MainWindow(QMainWindow):
         """Обновление состояния кнопки записи"""
         mode = self.recording_mode_selector.currentData()
         gesture_selected = self.gesture_number_selector.currentIndex() != -1
-        
-        # Кнопка активна только если выбран режим записи и номер жеста
         self.record_gesture_button.setEnabled(mode == 1 and gesture_selected)
 
     def record_gesture(self):
@@ -1114,6 +1158,34 @@ class MainWindow(QMainWindow):
                     
                 except Exception as e:
                     QMessageBox.critical(self, "Ошибка", f"Не удалось добавить жест: {str(e)}")
+
+    def showEvent(self, event):
+        """Обработчик события показа окна"""
+        super().showEvent(event)
+        # Переинициализируем камеру при восстановлении окна
+        if hasattr(self, 'cap') and self.cap is not None:
+            self.cap.release()
+            self.cap = cv2.VideoCapture(0)
+            if not self.cap.isOpened():
+                QMessageBox.critical(self, "Ошибка", "Не удалось подключиться к камере")
+                return
+            # Устанавливаем параметры камеры заново
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_height)
+            
+    def hideEvent(self, event):
+        """Обработчик события скрытия окна"""
+        super().hideEvent(event)
+        # Освобождаем ресурсы камеры при скрытии окна
+        if hasattr(self, 'cap') and self.cap is not None:
+            self.cap.release()
+            
+    def closeEvent(self, event):
+        """Обработчик события закрытия окна"""
+        # Освобождаем ресурсы камеры при закрытии
+        if hasattr(self, 'cap') and self.cap is not None:
+            self.cap.release()
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":

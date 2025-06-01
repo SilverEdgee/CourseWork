@@ -1,11 +1,7 @@
 {
     "Open": {
-        "action": "custom_hotkey",
-        "params": {
-            "hotkey": [
-                "tab"
-            ]
-        }
+        "action": "find",
+        "params": {}
     },
     "Close": {
         "action": "custom_hotkey",
@@ -17,12 +13,8 @@
         }
     },
     "Pointer": {
-        "action": "custom_hotkey",
-        "params": {
-            "hotkey": [
-                "home"
-            ]
-        }
+        "action": "paste",
+        "params": {}
     },
     "OK": {
         "action": "custom_hotkey",
