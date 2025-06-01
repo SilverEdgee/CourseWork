@@ -670,22 +670,26 @@ class MainWindow(QMainWindow):
                 'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
             )
             
+            # Читаем файл и очищаем от пустых строк
             with open(label_path, 'r', encoding='utf-8-sig') as f:
-                lines = f.readlines()
-                gestures = [line.strip() for line in lines if line.strip()]
+                gestures = []
+                for line in f:
+                    line = line.strip()
+                    if line:  # добавляем только непустые строки
+                        gestures.append(line)
                 
-                # Очистка комбобокса
-                self.action_gesture_selector.clear()
+            # Очистка комбобокса
+            self.action_gesture_selector.clear()
+            
+            # Заполнение комбобокса актуальными жестами
+            for gesture in gestures:
+                self.action_gesture_selector.addItem(gesture)
                 
-                # Заполнение комбобокса
-                for gesture in gestures:
-                    self.action_gesture_selector.addItem(gesture)
-                    
-                # Обновляем список номеров жестов
-                self.update_gesture_numbers()
-                    
-                self.log_event(f"Загружено {len(gestures)} жестов")
-                    
+            # Обновляем список номеров жестов
+            self.update_gesture_numbers()
+                
+            self.log_event(f"Загружено {len(gestures)} жестов")
+                
         except Exception as e:
             QMessageBox.warning(self, "Ошибка загрузки жестов", f"Не удалось загрузить список жестов: {str(e)}")
             
@@ -1044,14 +1048,24 @@ class MainWindow(QMainWindow):
                 'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
             )
             
+            # Читаем файл и очищаем от пустых строк
             with open(label_path, 'r', encoding='utf-8-sig') as f:
-                lines = f.readlines()
-                gestures = [line.strip() for line in lines if line.strip()]
+                gestures = []
+                for line in f:
+                    line = line.strip()
+                    if line:  # добавляем только непустые строки
+                        gestures.append(line)
                 
-                for i, gesture in enumerate(gestures):
-                    self.gesture_number_selector.addItem(f"Жест {i}: {gesture}", i)
-                    
-                self.log_event(f"Обновлен список жестов: {len(gestures)} жестов")
+            # Перезаписываем файл только с актуальными жестами
+            with open(label_path, 'w', encoding='utf-8-sig') as f:
+                for gesture in gestures:
+                    f.write(gesture + '\n')
+                
+            # Обновляем ComboBox только актуальными жестами
+            for i, gesture in enumerate(gestures):
+                self.gesture_number_selector.addItem(f"Жест {i}: {gesture}", i)
+                
+            self.log_event(f"Обновлен список жестов: {len(gestures)} жестов")
                 
         except Exception as e:
             QMessageBox.warning(self, "Ошибка загрузки жестов", f"Не удалось загрузить список жестов: {str(e)}")

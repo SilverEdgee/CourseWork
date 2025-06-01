@@ -43,13 +43,8 @@
         }
     },
     "Peace Sign": {
-        "action": "custom_hotkey",
-        "params": {
-            "hotkey": [
-                "ctrl",
-                "c"
-            ]
-        }
+        "action": "find",
+        "params": {}
     },
     "Thumb Down": {
         "action": "custom_hotkey",
@@ -76,9 +71,5 @@
                 "f5"
             ]
         }
-    },
-    "Palm": {
-        "action": "custom_hotkey",
-        "params": {}
     }
 }
