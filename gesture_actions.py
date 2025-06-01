@@ -132,38 +132,38 @@ class GestureActions:
     def get_available_actions(self):
         """Получение списка доступных действий"""
         return [
-            # Базовые действия
+            # базовые действия
             {"id": "none", "name": "Нет действия"},
             
-            # Действия мыши
+            # Действия мышки
             {"id": "click", "name": "Мышь: левый клик"},
             {"id": "right_click", "name": "Мышь: правый клик"},
             {"id": "double_click", "name": "Мышь: двойной клик"},
             {"id": "scroll_up", "name": "Мышь: прокрутка вверх"},
             {"id": "scroll_down", "name": "Мышь: прокрутка вниз"},
             
-            # Буфер обмена
+            # Буфер 
             {"id": "copy", "name": "Комбинация клавиш: копировать (Ctrl+C)"},
             {"id": "paste", "name": "Комбинация клавиш: вставить (Ctrl+V)"},
             {"id": "cut", "name": "Комбинация клавиш: вырезать (Ctrl+X)"},
             
-            # Общие команды редактирования
+            # общие команды редактирования
             {"id": "select_all", "name": "Комбинация клавиш: выделить всё (Ctrl+A)"},
             {"id": "undo", "name": "Комбинация клавиш: отменить (Ctrl+Z)"},
             {"id": "redo", "name": "Комбинация клавиш: повторить (Ctrl+Y)"},
             {"id": "save", "name": "Комбинация клавиш: сохранить (Ctrl+S)"},
             
-            # Команды IDE
+            # запуска
             {"id": "run_code", "name": "Комбинация клавиш: запустить код (F5)"},
             
-            # Команды навигации в IDE
+            # навигация
             {"id": "go_to_definition", "name": "Комбинация клавиш: перейти к определению (F12)"},
             {"id": "find", "name": "Комбинация клавиш: найти (Ctrl+F)"},
             {"id": "find_in_files", "name": "Комбинация клавиш: найти в файлах (Ctrl+Shift+F)"},
             {"id": "quick_open", "name": "Комбинация клавиш: быстрое открытие файла (Ctrl+P)"},
             {"id": "command_palette", "name": "Комбинация клавиш: палитра команд (Ctrl+Shift+P)"},
             
-            # Работа с файлами и окнами
+            # файлы
             {"id": "new_file", "name": "Комбинация клавиш: новый файл (Ctrl+N)"},
             {"id": "open_file", "name": "Комбинация клавиш: открыть файл (Ctrl+O)"},
             {"id": "close_file", "name": "Комбинация клавиш: закрыть файл (Ctrl+W)"},
@@ -171,7 +171,7 @@ class GestureActions:
             {"id": "switch_tab_next", "name": "Комбинация клавиш: следующая вкладка (Ctrl+Tab)"},
             {"id": "switch_tab_prev", "name": "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)"},
             
-            # Системные команды
+            # доп фишки
             {"id": "screenshot", "name": "Системное: сделать скриншот"}
         ]
         
@@ -237,7 +237,6 @@ class GestureActions:
         """Установка задержки между выполнением действий"""
         self.action_cooldown = max(0.1, float(seconds))
         logger.info(f"Установлена глобальная задержка между действиями: {self.action_cooldown} сек")
-        # Сбрасываем время последнего действия при изменении задержки
         self.last_action_time = 0
         
     def execute_action(self, gesture_name, x_pos=None, y_pos=None):
@@ -260,20 +259,20 @@ class GestureActions:
             logger.warning(f"Жест '{gesture_name}' не найден в конфигурации")
             return False
 
-        # Проверяем глобальную задержку перед выполнением любого действия
+        # проверка задержки
         current_time = time.time()
         if current_time - self.last_action_time < self.action_cooldown:
             logger.info(f"Жест {gesture_name} пропущен: не прошло {self.action_cooldown} сек с последнего действия")
             return False
             
-        # Обновляем время последнего действия
+        # обновление времени последнего действия
         self.last_action_time = current_time
         
         action_config = self.actions_mapping[gesture_name]
         action_type = action_config["action"]
         params = action_config["params"]
 
-        # Получаем русское описание действия
+        # получение описания действия
         action_descriptions = {
             "none": "Нет действия",
             "click": "Мышь: левый клик",
@@ -306,14 +305,14 @@ class GestureActions:
         action_description = action_descriptions.get(action_type, f"Неизвестное действие: {action_type}")
         
         try:
-            # Получаем размеры экрана для справки
+            # получение размеров экрана для справки
             screen_width, screen_height = pyautogui.size()
             
             if action_type == "none":
                 logger.info(f"Выполнено действие: {action_description}")
                 return True
                 
-            # Базовые действия мыши
+            # базовые действия мыши
             elif action_type == "click":
                 pyautogui.click()
                 logger.info(f"Выполнено действие: {action_description}")
@@ -334,7 +333,7 @@ class GestureActions:
                 pyautogui.scroll(-100)
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Буфер обмена
+            # буфер обмена
             elif action_type == "copy":
                 pyautogui.hotkey('ctrl', 'c')
                 logger.info(f"Выполнено действие: {action_description}")
@@ -347,7 +346,7 @@ class GestureActions:
                 pyautogui.hotkey('ctrl', 'x')
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Общие команды редактирования
+            # общие команды редактирования
             elif action_type == "select_all":
                 pyautogui.hotkey('ctrl', 'a')
                 logger.info(f"Выполнено действие: {action_description}")
@@ -364,12 +363,12 @@ class GestureActions:
                 pyautogui.hotkey('ctrl', 's')
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Команды IDE
+            # запуска
             elif action_type == "run_code":
                 pyautogui.press('f5')
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Команды навигации в IDE
+            # навигация
             elif action_type == "go_to_definition":
                 pyautogui.press('f12')
                 logger.info(f"Выполнено действие: {action_description}")
@@ -390,7 +389,7 @@ class GestureActions:
                 pyautogui.hotkey('ctrl', 'shift', 'p')
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Работа с файлами и окнами
+            # файлы
             elif action_type == "new_file":
                 pyautogui.hotkey('ctrl', 'n')
                 logger.info(f"Выполнено действие: {action_description}")
@@ -415,7 +414,7 @@ class GestureActions:
                 pyautogui.hotkey('ctrl', 'shift', 'tab')
                 logger.info(f"Выполнено действие: {action_description}")
                 
-            # Системные команды
+            # доп фишки
             elif action_type == "screenshot":
                 screenshot = pyautogui.screenshot()
                 screenshot_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
@@ -440,7 +439,7 @@ class GestureActions:
 
 
 if __name__ == "__main__":
-    # Тестирование класса
+    # тестирование класса
     actions = GestureActions()
     print("Доступные действия:", actions.get_available_actions())
     print("Текущая конфигурация:", actions.actions_mapping) 

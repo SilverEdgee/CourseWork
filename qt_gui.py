@@ -125,7 +125,7 @@ class VideoThread(QTimer):
         
         # Запуск таймера
         self.timeout.connect(self.update_frame)
-        self.setInterval(30)  # ~30 FPS
+        self.setInterval(30)  # 30 мс - где-то 30 фпс
         
     def start_camera(self, camera_id=0, width=640, height=480):
         """Запуск камеры"""
@@ -219,7 +219,7 @@ class AddGestureDialog(QDialog):
         description.setStyleSheet("color: #E6E6E6; padding: 10px; background-color: #3E3E42; border-radius: 5px;")
         layout.addWidget(description)
         
-        # Поле ввода названия
+        # поле ввода названия
         name_layout = QHBoxLayout()
         name_label = QLabel("Название жеста:")
         self.name_input = QLineEdit()
@@ -228,7 +228,7 @@ class AddGestureDialog(QDialog):
         name_layout.addWidget(self.name_input)
         layout.addLayout(name_layout)
         
-        # Кнопки
+        # кнопки
         button_layout = QHBoxLayout()
         save_button = QPushButton("Сохранить")
         save_button.clicked.connect(self.accept)
@@ -308,7 +308,6 @@ class MainWindow(QMainWindow):
         settings_layout.setSpacing(15)
         settings_panel.setFixedWidth(300)
         
-        # Инициализация event_log в начале
         self.event_log = QListWidget()
         self.event_log.setMaximumHeight(100)
         
@@ -346,7 +345,7 @@ class MainWindow(QMainWindow):
         self.show_gestures_info_button.clicked.connect(self.show_gestures_info)
         camera_layout.addWidget(self.show_gestures_info_button)
         
-        # Добавляем кнопку для создания нового жеста
+        # добавляем кнопку для создания нового жеста
         self.add_gesture_button = QPushButton("ДОБАВИТЬ НОВЫЙ ЖЕСТ")
         self.add_gesture_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon))
         self.add_gesture_button.setIconSize(QSize(24, 24))
@@ -425,7 +424,7 @@ class MainWindow(QMainWindow):
         gesture_number_layout = QHBoxLayout()
         gesture_number_layout.addWidget(QLabel("Номер жеста:"))
         self.gesture_number_selector = QComboBox()
-        self.update_gesture_numbers()  # Вызываем новый метод
+        self.update_gesture_numbers()
         self.gesture_number_selector.setCurrentIndex(-1)
         gesture_number_layout.addWidget(self.gesture_number_selector)
         recording_layout.addLayout(gesture_number_layout)
@@ -605,7 +604,7 @@ class MainWindow(QMainWindow):
                 return f"Комбинация клавиш: {hotkey}"
             return "Комбинация клавиш"
             
-        # Действия мыши
+        # действия мыши
         elif action_type == "click":
             return "Мышь: левый клик"
         elif action_type == "double_click":
@@ -617,7 +616,7 @@ class MainWindow(QMainWindow):
         elif action_type == "scroll_down":
             return "Мышь: прокрутка вниз"
             
-        # Буфер обмена
+        # буфер обмена
         elif action_type == "copy":
             return "Комбинация клавиш: копировать (Ctrl+C)"
         elif action_type == "paste":
@@ -625,7 +624,7 @@ class MainWindow(QMainWindow):
         elif action_type == "cut":
             return "Комбинация клавиш: вырезать (Ctrl+X)"
             
-        # Общие команды редактирования
+        # общие команды редактирования
         elif action_type == "select_all":
             return "Комбинация клавиш: выделить всё (Ctrl+A)"
         elif action_type == "undo":
@@ -635,7 +634,7 @@ class MainWindow(QMainWindow):
         elif action_type == "save":
             return "Комбинация клавиш: сохранить (Ctrl+S)"
             
-        # Команды IDE
+        # запуска
         elif action_type == "run_code":
             return "Комбинация клавиш: запустить код (F5)"
         elif action_type == "go_to_definition":
@@ -649,7 +648,7 @@ class MainWindow(QMainWindow):
         elif action_type == "command_palette":
             return "Комбинация клавиш: палитра команд (Ctrl+Shift+P)"
             
-        # Работа с файлами и окнами
+        # файлы
         elif action_type == "new_file":
             return "Комбинация клавиш: новый файл (Ctrl+N)"
         elif action_type == "open_file":
@@ -663,25 +662,25 @@ class MainWindow(QMainWindow):
         elif action_type == "switch_tab_prev":
             return "Комбинация клавиш: предыдущая вкладка (Ctrl+Shift+Tab)"
             
-        # Системные команды
+        # доп фишки
         elif action_type == "screenshot":
             return "Системное: сделать скриншот"
             
-        # Возвращаем оригинальное название, если неизвестный тип
+        # возвращаем оригинальное название, если неизвестный тип
         return f"Неизвестное действие: {action_type}"
 
     def apply_mediapipe_settings(self):
         """Применение настроек MediaPipe"""
-        static_mode = False  # Статичный режим всегда выключен в новом интерфейсе
+        static_mode = False  # статичный режим всегда выключен в новом интерфейсе
         
-        # Используем значения, сохраненные при выборе чувствительности
+        # используем значения, сохраненные при выборе чувствительности
         self.video_thread.update_settings(
             static_mode=static_mode,
             min_detection_conf=self.detection_conf,
             min_tracking_conf=self.tracking_conf
         )
         
-        # Всплывающее уведомление
+        # всплывающее уведомление
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Настройки применены")
@@ -693,19 +692,18 @@ class MainWindow(QMainWindow):
      
     def load_initial_settings(self):
         """Загрузка начальных значений настроек"""
-        # Инициализируем значения перед вызовом set_sensitivity
+        # инициализируем значения перед вызовом set_sensitivity
         self.detection_conf = 0.7
         self.tracking_conf = 0.5
         
-        # Устанавливаем средний уровень чувствительности по умолчанию 
-        # (теперь это безопасно, так как значения уже инициализированы)
+        # устанавливаем средний уровень чувствительности по умолчанию 
         self.set_sensitivity("medium")
         
-        # Начальная задержка между действиями
-        self.action_cooldown_spinner.setValue(1.0)  # 1 секунда по умолчанию
-        self.gesture_actions.set_action_cooldown(1.0)
+        # начальная задержка между действиями
+        self.action_cooldown_spinner.setValue(3.0)  # 3
+        self.gesture_actions.set_action_cooldown(3.0)
         
-        # Логирование загрузки настроек
+        # логирование загрузки настроек
         self.log_event("Загружены начальные настройки")
 
     def load_gesture_list(self):
@@ -716,7 +714,6 @@ class MainWindow(QMainWindow):
                 'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
             )
             
-            # Читаем файл и очищаем от пустых строк
             with open(label_path, 'r', encoding='utf-8-sig') as f:
                 gestures = []
                 for line in f:
@@ -724,14 +721,14 @@ class MainWindow(QMainWindow):
                     if line:  # добавляем только непустые строки
                         gestures.append(line)
                 
-            # Очистка комбобокса
+            # очистка комбобокса
             self.action_gesture_selector.clear()
             
-            # Заполнение комбобокса актуальными жестами
+            # заполнение комбобокса актуальными жестами
             for gesture in gestures:
                 self.action_gesture_selector.addItem(gesture)
                 
-            # Обновляем список номеров жестов
+            # обновляем список номеров жестов
             self.update_gesture_numbers()
                 
             self.log_event(f"Загружено {len(gestures)} жестов")
@@ -741,7 +738,6 @@ class MainWindow(QMainWindow):
             
     def load_action_mappings(self):
         """Загрузка настроек действий для жестов"""
-        # Здесь конфигурация уже загружена в self.gesture_actions
         self.update_action_selector()
         self.log_event("Загружены настройки действий для жестов")
         
@@ -751,12 +747,10 @@ class MainWindow(QMainWindow):
         if not gesture:
             return
             
-        # Выбираем соответствующее действие в селекторе
         action_type = "none"
         if gesture in self.gesture_actions.actions_mapping:
             action_type = self.gesture_actions.actions_mapping[gesture]["action"]
             
-        # Находим индекс действия
         index = self.action_type_selector.findData(action_type)
         if index >= 0:
             self.action_type_selector.setCurrentIndex(index)
@@ -769,13 +763,10 @@ class MainWindow(QMainWindow):
         if not gesture or not action_type:
             return
             
-        # Сохраняем настройку
         self.gesture_actions.add_gesture_action(gesture, action_type)
         
-        # Получаем понятное название действия
         action_display = self.get_action_display_name(action_type)
         
-        # Показываем уведомление
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Настройка сохранена")
@@ -801,7 +792,7 @@ class MainWindow(QMainWindow):
         elif "настройка" in message.lower() or "применены" in message.lower():
             item.setForeground(QColor(135, 206, 250))  # Голубой для настроек
             
-        # Добавление сообщения в лог
+        # добавление сообщения в лог
         current_time = QApplication.instance().translate("Time", "Now: ") + \
                       QTime.currentTime().toString('hh:mm:ss')
         item.setToolTip(current_time)
@@ -819,7 +810,6 @@ class MainWindow(QMainWindow):
         """Отображает информацию о доступных жестах и их действиях"""
         gestures_info = []
         
-        # Получаем список всех жестов и действий
         for gesture_name in self.gesture_actions.actions_mapping:
             action_info = self.gesture_actions.actions_mapping[gesture_name]
             
@@ -828,20 +818,18 @@ class MainWindow(QMainWindow):
                 action_params = action_info["params"]
                 action_display = self.get_action_display_name(action_type, action_params)
                 
-                # Используем названия жестов на русском языке из файла меток
                 gesture_display = gesture_name
                 
                 gestures_info.append((gesture_display, action_display))
         
         dialog = QDialog(self)
         dialog.setWindowTitle("Справка по жестам IDE")
-        dialog.setMinimumWidth(800)  # Увеличили ширину
-        dialog.setMinimumHeight(600)  # Увеличили высоту
+        dialog.setMinimumWidth(800) 
+        dialog.setMinimumHeight(600) 
         dialog.setStyleSheet("background-color: #2D2D30; color: #E6E6E6;")
         
         layout = QVBoxLayout(dialog)
         
-        # Добавляем заголовок
         header_label = QLabel("Справочник по жестам и действиям")
         header_label.setStyleSheet("""
             font-size: 18px;
@@ -855,7 +843,6 @@ class MainWindow(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
         
-        # Добавляем описание
         description_label = QLabel(
             "Здесь представлены все доступные жесты и их назначенные действия. "
             "Вы можете изменить действия для жестов в разделе 'Настройка действия'."
@@ -870,13 +857,11 @@ class MainWindow(QMainWindow):
         description_label.setWordWrap(True)
         layout.addWidget(description_label)
         
-        # Создаем таблицу
         table = QTableWidget()
         table.setColumnCount(2)
         table.setRowCount(len(gestures_info))
         table.setHorizontalHeaderLabels(["Жест", "Действие"])
         
-        # Настраиваем заголовки
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
@@ -890,10 +875,8 @@ class MainWindow(QMainWindow):
             }
         """)
         
-        # Настраиваем вертикальный заголовок
         table.verticalHeader().setVisible(False)
         
-        # Настраиваем стиль таблицы
         table.setStyleSheet("""
             QTableWidget {
                 background-color: #2D2D30;
@@ -911,7 +894,6 @@ class MainWindow(QMainWindow):
             }
         """)
         
-        # Заполняем таблицу
         for row, (gesture, action) in enumerate(gestures_info):
             # Жест
             gesture_item = QTableWidgetItem(gesture)
@@ -927,7 +909,6 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(table)
         
-        # Добавляем кнопки управления
         buttons_layout = QHBoxLayout()
         
         # Кнопка обновления
@@ -997,7 +978,7 @@ class MainWindow(QMainWindow):
             self.recorded_frames = 0
             self.frames_counter.setText("Записано кадров: 0")
             
-            # Показываем инструкцию по записи
+            # инструкция
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Information)
             msg.setWindowTitle("Режим записи")
@@ -1018,7 +999,6 @@ class MainWindow(QMainWindow):
             self.gesture_number_selector.setCurrentIndex(-1)
             self.record_gesture_button.setEnabled(False)
             
-        # Обновляем режим в процессоре жестов
         if self.video_thread.processor:
             self.video_thread.processor.set_mode(mode)
             self.log_event(f"Режим изменен на: {'Запись жестов' if mode == 1 else 'Нормальный режим'}")
@@ -1055,11 +1035,11 @@ class MainWindow(QMainWindow):
             return
             
         if self.video_thread.processor:
-            # Получаем последние данные о руке
+            # последние данные о руке
             last_frame_data = getattr(self, '_last_frame_data', None)
             if last_frame_data and 'landmark_list' in last_frame_data:
                 self.log_event("Найдены данные о руке, записываю кадр...")
-                # Записываем кадр
+                # кадр записанныйкадр
                 if self.video_thread.processor.record_frame(last_frame_data['landmark_list']):
                     self.recorded_frames += 1
                     self.frames_counter.setText(f"Записано кадров: {self.recorded_frames}")
@@ -1073,8 +1053,8 @@ class MainWindow(QMainWindow):
         """Обработка нажатий клавиш"""
         if event.key() == Qt.Key_Escape:  # Escape - выход из режима записи
             if self.video_thread.processor:
-                self.video_thread.processor.set_mode(0)  # Переключаемся в нормальный режим
-                self.recording_mode_selector.setCurrentIndex(0)  # Переключаем селектор режима
+                self.video_thread.processor.set_mode(0)  # нормалньый режим
+                self.recording_mode_selector.setCurrentIndex(0)  # селектор режима на 0
                 self.log_event("Режим записи выключен")
                 if self.recorded_frames > 0:
                     self.show_recording_notification(success=True)
@@ -1092,15 +1072,13 @@ class MainWindow(QMainWindow):
                 'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
             )
             
-            # Читаем файл и очищаем от пустых строк
             with open(label_path, 'r', encoding='utf-8-sig') as f:
                 gestures = []
                 for line in f:
                     line = line.strip()
-                    if line:  # добавляем только непустые строки
+                    if line:  # только непустые
                         gestures.append(line)
                 
-            # Перезаписываем файл только с актуальными жестами
             with open(label_path, 'w', encoding='utf-8-sig') as f:
                 for gesture in gestures:
                     f.write(gesture + '\n')
@@ -1121,13 +1099,11 @@ class MainWindow(QMainWindow):
             gesture_name = dialog.get_gesture_name()
             if gesture_name:
                 try:
-                    # Добавляем жест в CSV файл
                     label_path = os.path.join(
                         os.path.dirname(os.path.abspath(__file__)),
                         'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
                     )
                     
-                    # Проверяем, не существует ли уже такой жест
                     existing_gestures = []
                     if os.path.exists(label_path):
                         with open(label_path, 'r', encoding='utf-8-sig') as f:
@@ -1138,14 +1114,11 @@ class MainWindow(QMainWindow):
                                          f"Жест с названием '{gesture_name}' уже существует!")
                         return
                     
-                    # Добавляем новый жест
                     with open(label_path, 'a', encoding='utf-8-sig') as f:
                         f.write(f"{gesture_name}\n")
                     
-                    # Обновляем списки жестов в интерфейсе
                     self.load_gesture_list()
                     
-                    # Показываем инструкции пользователю
                     QMessageBox.information(
                         self,
                         "Жест добавлен",
@@ -1162,27 +1135,23 @@ class MainWindow(QMainWindow):
     def showEvent(self, event):
         """Обработчик события показа окна"""
         super().showEvent(event)
-        # Переинициализируем камеру при восстановлении окна
         if hasattr(self, 'cap') and self.cap is not None:
             self.cap.release()
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
                 QMessageBox.critical(self, "Ошибка", "Не удалось подключиться к камере")
                 return
-            # Устанавливаем параметры камеры заново
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_height)
             
     def hideEvent(self, event):
         """Обработчик события скрытия окна"""
         super().hideEvent(event)
-        # Освобождаем ресурсы камеры при скрытии окна
         if hasattr(self, 'cap') and self.cap is not None:
             self.cap.release()
             
     def closeEvent(self, event):
         """Обработчик события закрытия окна"""
-        # Освобождаем ресурсы камеры при закрытии
         if hasattr(self, 'cap') and self.cap is not None:
             self.cap.release()
         super().closeEvent(event)
