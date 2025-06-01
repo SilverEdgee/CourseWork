@@ -294,8 +294,8 @@ class GestureProcessor:
             print(f"Неверный режим: {self.mode}, ожидается 1")
             return False
             
-        if not (0 <= self.number <= 9):
-            print(f"Неверный номер жеста: {self.number}, ожидается 0-9")
+        if self.number < 0 or self.number >= len(self.keypoint_classifier_labels):
+            print(f"Неверный номер жеста: {self.number}, ожидается 0-{len(self.keypoint_classifier_labels)-1}")
             return False
             
         if landmark_list is None:

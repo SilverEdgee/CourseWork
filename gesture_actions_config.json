@@ -76,5 +76,9 @@
                 "f5"
             ]
         }
+    },
+    "Palm": {
+        "action": "custom_hotkey",
+        "params": {}
     }
 }

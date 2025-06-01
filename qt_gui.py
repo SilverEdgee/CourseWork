@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                            QLabel, QPushButton, QComboBox, QGroupBox, QGridLayout, 
                            QTabWidget, QListWidget, QListWidgetItem, QTableWidget, 
                            QTableWidgetItem, QCheckBox, QSlider, QMessageBox,
-                           QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView)
+                           QDoubleSpinBox, QStyle, QStyleFactory, QDialog, QHeaderView,
+                           QLineEdit)
 from PyQt5.QtGui import QImage, QPixmap, QColor, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSize, QTime
 
@@ -196,6 +197,51 @@ class VideoThread(QTimer):
             )
 
 
+class AddGestureDialog(QDialog):
+    """Диалог для добавления нового жеста"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Добавление нового жеста")
+        self.setMinimumWidth(400)
+        self.setup_ui()
+        
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Описание
+        description = QLabel(
+            "Введите название нового жеста. После добавления жеста:\n"
+            "1. Запишите данные для жеста в режиме записи\n"
+            "2. Запустите ноутбук keypoint_classification_EN.ipynb\n"
+            "3. Выполните Restart & Run All для обучения модели"
+        )
+        description.setWordWrap(True)
+        description.setStyleSheet("color: #E6E6E6; padding: 10px; background-color: #3E3E42; border-radius: 5px;")
+        layout.addWidget(description)
+        
+        # Поле ввода названия
+        name_layout = QHBoxLayout()
+        name_label = QLabel("Название жеста:")
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Введите название жеста")
+        name_layout.addWidget(name_label)
+        name_layout.addWidget(self.name_input)
+        layout.addLayout(name_layout)
+        
+        # Кнопки
+        button_layout = QHBoxLayout()
+        save_button = QPushButton("Сохранить")
+        save_button.clicked.connect(self.accept)
+        cancel_button = QPushButton("Отмена")
+        cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(save_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+        
+    def get_gesture_name(self):
+        return self.name_input.text().strip()
+
+
 class MainWindow(QMainWindow):
     """Главное окно приложения"""
     def __init__(self):
@@ -262,6 +308,10 @@ class MainWindow(QMainWindow):
         settings_layout.setSpacing(15)
         settings_panel.setFixedWidth(300)
         
+        # Инициализация event_log в начале
+        self.event_log = QListWidget()
+        self.event_log.setMaximumHeight(100)
+        
         camera_group = QGroupBox("Камера и управление")
         camera_layout = QVBoxLayout(camera_group)
         camera_layout.setSpacing(12)
@@ -295,6 +345,14 @@ class MainWindow(QMainWindow):
         self.show_gestures_info_button.setMinimumHeight(40)
         self.show_gestures_info_button.clicked.connect(self.show_gestures_info)
         camera_layout.addWidget(self.show_gestures_info_button)
+        
+        # Добавляем кнопку для создания нового жеста
+        self.add_gesture_button = QPushButton("ДОБАВИТЬ НОВЫЙ ЖЕСТ")
+        self.add_gesture_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon))
+        self.add_gesture_button.setIconSize(QSize(24, 24))
+        self.add_gesture_button.setMinimumHeight(40)
+        self.add_gesture_button.clicked.connect(self.show_add_gesture_dialog)
+        camera_layout.addWidget(self.add_gesture_button)
         
         settings_layout.addWidget(camera_group)
         
@@ -365,10 +423,9 @@ class MainWindow(QMainWindow):
         recording_layout.addLayout(recording_mode_layout)
         
         gesture_number_layout = QHBoxLayout()
-        gesture_number_layout.addWidget(QLabel("Номер жеста (0-9):"))
+        gesture_number_layout.addWidget(QLabel("Номер жеста:"))
         self.gesture_number_selector = QComboBox()
-        for i in range(10):
-            self.gesture_number_selector.addItem(f"Жест {i}", i)
+        self.update_gesture_numbers()  # Вызываем новый метод
         self.gesture_number_selector.setCurrentIndex(-1)
         gesture_number_layout.addWidget(self.gesture_number_selector)
         recording_layout.addLayout(gesture_number_layout)
@@ -454,8 +511,6 @@ class MainWindow(QMainWindow):
         
         log_group = QGroupBox("Лог событий")
         log_layout = QVBoxLayout(log_group)
-        self.event_log = QListWidget()
-        self.event_log.setMaximumHeight(100)
         log_layout.addWidget(self.event_log)
         info_layout.addWidget(log_group)
         
@@ -626,6 +681,9 @@ class MainWindow(QMainWindow):
                 for gesture in gestures:
                     self.action_gesture_selector.addItem(gesture)
                     
+                # Обновляем список номеров жестов
+                self.update_gesture_numbers()
+                    
                 self.log_event(f"Загружено {len(gestures)} жестов")
                     
         except Exception as e:
@@ -679,6 +737,10 @@ class MainWindow(QMainWindow):
     
     def log_event(self, message):
         """Добавление сообщения в лог событий"""
+        if not hasattr(self, 'event_log'):
+            print(f"Warning: event_log not initialized, message: {message}")
+            return
+            
         item = QListWidgetItem(message)
         
         # определение типа сообщения по ключевым словам
@@ -972,6 +1034,72 @@ class MainWindow(QMainWindow):
                     self.frames_counter.setText("Записано кадров: 0")
         
         super().keyPressEvent(event)
+
+    def update_gesture_numbers(self):
+        """Обновление списка номеров жестов на основе файла меток"""
+        self.gesture_number_selector.clear()
+        try:
+            label_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
+            )
+            
+            with open(label_path, 'r', encoding='utf-8-sig') as f:
+                lines = f.readlines()
+                gestures = [line.strip() for line in lines if line.strip()]
+                
+                for i, gesture in enumerate(gestures):
+                    self.gesture_number_selector.addItem(f"Жест {i}: {gesture}", i)
+                    
+                self.log_event(f"Обновлен список жестов: {len(gestures)} жестов")
+                
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка загрузки жестов", f"Не удалось загрузить список жестов: {str(e)}")
+
+    def show_add_gesture_dialog(self):
+        """Показать диалог добавления нового жеста"""
+        dialog = AddGestureDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            gesture_name = dialog.get_gesture_name()
+            if gesture_name:
+                try:
+                    # Добавляем жест в CSV файл
+                    label_path = os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        'model', 'keypoint_classifier', 'keypoint_classifier_label.csv'
+                    )
+                    
+                    # Проверяем, не существует ли уже такой жест
+                    existing_gestures = []
+                    if os.path.exists(label_path):
+                        with open(label_path, 'r', encoding='utf-8-sig') as f:
+                            existing_gestures = [line.strip() for line in f.readlines()]
+                    
+                    if gesture_name in existing_gestures:
+                        QMessageBox.warning(self, "Ошибка", 
+                                         f"Жест с названием '{gesture_name}' уже существует!")
+                        return
+                    
+                    # Добавляем новый жест
+                    with open(label_path, 'a', encoding='utf-8-sig') as f:
+                        f.write(f"{gesture_name}\n")
+                    
+                    # Обновляем списки жестов в интерфейсе
+                    self.load_gesture_list()
+                    
+                    # Показываем инструкции пользователю
+                    QMessageBox.information(
+                        self,
+                        "Жест добавлен",
+                        f"Жест '{gesture_name}' успешно добавлен!\n\n"
+                        "Теперь необходимо:\n"
+                        "1. Записать данные для жеста в режиме записи\n"
+                        "2. Запустить ноутбук keypoint_classification_EN.ipynb\n"
+                        "3. Выполнить Restart & Run All для обучения модели"
+                    )
+                    
+                except Exception as e:
+                    QMessageBox.critical(self, "Ошибка", f"Не удалось добавить жест: {str(e)}")
 
 
 if __name__ == "__main__":
